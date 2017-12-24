@@ -1,0 +1,13 @@
+[package]
+authors = ["German Lashevich <german.lashevich@gmail.com>"]
+name = "rustotpony"
+version = "0.1.0"
+
+[dependencies]
+base32 = "0.3.1"
+clap = "^2.29.0"
+oath = "0.10.2"
+rand = "0.4.1"
+serde = "1.0.24"
+serde_derive = "1.0.24"
+serde_json = "1.0.8"

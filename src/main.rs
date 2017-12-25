@@ -2,6 +2,7 @@ extern crate base32;
 extern crate clap;
 extern crate oath;
 extern crate rand;
+extern crate rpassword;
 extern crate serde_json;
 
 #[macro_use]
@@ -32,9 +33,9 @@ impl<DB: Database> RusTOTPony<DB> {
         }
     }
 
-    fn add_application(&mut self, name: &str, secret: &str) -> Result<(), String> {
+    fn create_application(&mut self, name: &str, username: &str, secret: &str) -> Result<(), String> {
         if let Some(secret_bytes) = GenApp::base32_to_bytes(secret) {
-            let new_app = GenApp::new(name, secret, secret_bytes);
+            let new_app = GenApp::new(name, username, secret, secret_bytes);
             if self.applications.contains_key(name) {
                 Err(format!("Application with name '{}' already exists!", name))
             } else {
@@ -185,11 +186,11 @@ struct GenApp {
 }
 
 impl GenApp {
-    fn new(name: &str, secret: &str, secret_bytes: Vec<u8>) -> Self {
+    fn new(name: &str, username: &str, secret: &str, secret_bytes: Vec<u8>) -> Self {
         GenApp {
             name: String::from(name),
             secret: String::from(secret),
-            username: String::from(""),
+            username: String::from(username),
             secret_bytes: secret_bytes,
         }
     }
@@ -240,10 +241,8 @@ impl Cli {
                 let app_name: &str = sub_app
                     .value_of("APPNAME")
                     .expect("Couldn't read APPNAME for 'add' command");
-                let key: &str = sub_app
-                    .value_of("KEY")
-                    .expect("Couldn't read KEY for 'add' command");
-                self.add_application(app_name, key);
+                let key: &str = sub_app.value_of("USERNAME").unwrap_or("");
+                self.create_application(app_name, key);
             }
             ("delete", Some(sub_app)) => {
                 let app_name: &str = sub_app
@@ -291,7 +290,7 @@ impl Cli {
                 SubCommand::with_name("add")
                     .about("Adds new generator")
                     .arg(Arg::with_name("APPNAME").required(true))
-                    .arg(Arg::with_name("KEY").required(true)),
+                    .arg(Arg::with_name("USERNAME")),
             )
             .subcommand(
                 SubCommand::with_name("delete")
@@ -409,8 +408,9 @@ impl Cli {
         println!("{:?}", self.app.get_application(name));
     }
 
-    fn add_application(&mut self, name: &str, key: &str) {
-        match self.app.add_application(name, key) {
+    fn create_application(&mut self, name: &str, username: &str) {
+        let secret = rpassword::prompt_password_stdout("Enter your secret code: ").unwrap();
+        match self.app.create_application(name, username, &secret) {
             Ok(_) => {
                 self.app.flush();
                 println!("New application created: {}", name)

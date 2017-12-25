@@ -13,8 +13,8 @@ use std::collections::HashMap;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use std::thread;
-use std::time::Duration;
 
 
 const CONFIG_PATH: &str = ".rustotpony/db.json";
@@ -316,21 +316,33 @@ impl Cli {
         match self.app.get_applications(){
             Ok(apps) => {
                 let mut is_first_iteration = true;
-                let lines_count = apps.len();
+                let lines_count = apps.len() + 1;
+                println!("Welcome to RusTOTPony realtime dashboard! Press ^C to quit.");
                 loop {
                     if is_first_iteration {
                         is_first_iteration = false;
                     } else {
                         print!("\x1B[{}A", lines_count);
                     }
+                    Self::print_progress_bar();
                     for (_, app) in apps {
-                        println!{"{} {}", app.get_code(), app.name};
+                        println!{"{:06} {}", app.get_code(), app.name};
                     }
-                    thread::sleep(Duration::from_millis(1000));
+                    thread::sleep(Duration::from_millis(100));
                 }
             },
             Err(err) => println!("{}", err),
         }
+    }
+
+    fn print_progress_bar() {
+        let width = 60;
+        let now = SystemTime::now();
+        let since_the_epoch = now.duration_since(UNIX_EPOCH).unwrap();
+        let in_ms = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1_000_000;
+        let step = in_ms % 30_000;
+        let idx = step * width / 30_000;
+        println!("[{:60}]", "=".repeat(idx as usize));
     }
 
     fn show_applications_list(&self, _: bool) {

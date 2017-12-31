@@ -14,7 +14,7 @@ Base commads (simple CRUD):
 - delete app
 - clear database
 
-```s
+```sh
 $ totp dash
 $ totp list
 $ totp show-all

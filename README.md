@@ -34,6 +34,14 @@ SUBCOMMANDS:
 Try `totp help [SUBCOMMAND]` to see help for the given subcommand
 ```
 
+Steps:
+
+1. Retrieve your secret key from TOTP provider (it must be base32 encoded)
+1. Add new generator with `totp add GENNAME` (you will be asked for your secret)
+1. Check new generator by `totp list` or just display dashboard with one-time passwords with `totp dash`
+
+#### WARNING: Currently there is no encryption of the application database. Be careful with `~/.rustotpony/db.json` and keep it safe.
+
 ## TODO
 
 - command completion

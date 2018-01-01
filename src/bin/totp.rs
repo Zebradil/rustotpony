@@ -35,15 +35,15 @@ impl Cli {
             ("list", Some(_)) => {
                 self.show_applications_list(false);
             }
-            ("show-all", Some(_)) => {
-                self.show_applications_list(true);
-            }
-            ("show", Some(sub_app)) => {
-                let app_name: &str = sub_app
-                    .value_of("APPNAME")
-                    .expect("Couldn't read APPNAME for 'show' command");
-                self.show_application(app_name);
-            }
+            // ("show-all", Some(_)) => {
+            //     self.show_applications_list(true);
+            // }
+            // ("show", Some(sub_app)) => {
+            //     let app_name: &str = sub_app
+            //         .value_of("APPNAME")
+            //         .expect("Couldn't read APPNAME for 'show' command");
+            //     self.show_application(app_name);
+            // }
             ("add", Some(sub_app)) => {
                 let app_name: &str = sub_app
                     .value_of("APPNAME")
@@ -70,47 +70,48 @@ impl Cli {
                 self.eradicate_database();
             }
             _ => {
-                self.show_applications_list(true);
+                self.show_dashboard();
             }
         }
     }
 
     fn get_cli_api_matches(&self) -> clap::ArgMatches<'static> {
-        App::new("Main")
+        App::new("🐴  RusTOTPony")
             .version("0.1.0")
             .author("German Lashevich <german.lashevich@gmail.com>")
-            .about("TOTP code generator written with Rust")
+            .about("CLI manager of one-time password generators aka Google Authenticator")
             .subcommand(
-                SubCommand::with_name("dash").about("Shows realtime dashboard with all generators"),
+                SubCommand::with_name("dash").about("Show realtime dashboard with all generators"),
             )
-            .subcommand(SubCommand::with_name("list").about("Lists all generators"))
-            .subcommand(
-                SubCommand::with_name("show-all")
-                    .about("Shows all generators with their's current values"),
-            )
-            .subcommand(
-                SubCommand::with_name("show")
-                    .about("Shows generator with it's current value")
-                    .arg(Arg::with_name("APPNAME").required(true)),
-            )
+            .subcommand(SubCommand::with_name("list").about("List all generators"))
+            // .subcommand(
+            //     SubCommand::with_name("show-all")
+            //         .about("Shows all generators with their's current values"),
+            // )
+            // .subcommand(
+            //     SubCommand::with_name("show")
+            //         .about("Shows generator with it's current value")
+            //         .arg(Arg::with_name("APPNAME").required(true)),
+            // )
             .subcommand(
                 SubCommand::with_name("add")
-                    .about("Adds new generator")
+                    .about("Add a new generator")
                     .arg(Arg::with_name("APPNAME").required(true))
                     .arg(Arg::with_name("USERNAME")),
             )
             .subcommand(
                 SubCommand::with_name("delete")
-                    .about("Deletes generator")
+                    .about("Delete generator")
                     .arg(Arg::with_name("APPNAME").required(true)),
             )
             .subcommand(
                 SubCommand::with_name("rename")
-                    .about("Renames generator")
+                    .about("Rename generator")
                     .arg(Arg::with_name("APPNAME").required(true))
                     .arg(Arg::with_name("NEWNAME").required(true)),
             )
-            .subcommand(SubCommand::with_name("eradicate").about("Deletes all generators"))
+            .subcommand(SubCommand::with_name("eradicate").about("Delete all generators"))
+            .after_help("Try `totp help [SUBCOMMAND]` to see help for the given subcommand")
             .get_matches()
     }
 

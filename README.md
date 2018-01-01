@@ -1,32 +1,50 @@
-# RusTOTPony
+# 🐴 RusTOTPony
+
+CLI manager of one-time password generators aka Google Authenticator.
+Actually, it's simple in-file database which stores TOTP secret keys
+without any encryption (will be added in the future).
+
+## Installation
+
+### From source
+
+```sh
+$ cargo install
+```
 
 ## Usage
 
-Base commads (simple CRUD):
+```text
+USAGE:
+    totp [SUBCOMMAND]
 
-- show dashboard
-- show all apps
-  - with codes
-  - without codes
-- show code for app
-- add app (title, subtitle, key)
-- rename app
-- delete app
-- clear database
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
 
-```sh
-$ totp dash
-$ totp list
-$ totp show-all
-$ totp show APPNAME
-$ totp add APPNAME KEY # ask for key interactively?
-$ totp delete APPNAME # with confirmation
-$ totp rename APPNAME NEWNAME
-$ totp eradicate # with non-trivial confirmation
+SUBCOMMANDS:
+    add          Add a new generator
+    dash         Show realtime dashboard with all generators
+    delete       Delete generator
+    eradicate    Delete all generators
+    help         Prints this message or the help of the given subcommand(s)
+    list         List all generators
+    rename       Rename generator
+
+Try `totp help [SUBCOMMAND]` to see help for the given subcommand
 ```
 
 ## TODO
 
-- completion
-- encription with (manual or with keychain)
-- password caching
+- command completion
+- database encryption
+- database password caching
+- tests
+- binaries for main platforms
+- refactor `show` and `show-all` commands
+
+## License
+
+Licensed under [the MIT License][MIT License].
+
+[MIT License]: https://github.com/zebradil/rustotpony/blob/master/LICENSE

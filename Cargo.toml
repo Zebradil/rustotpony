@@ -3,12 +3,29 @@ authors = ["German Lashevich <german.lashevich@gmail.com>"]
 name = "rustotpony"
 version = "0.1.0"
 
+description = "Manager of one-time password generators"
+homepage = "https://github.com/zebradil/rustotpony"
+repository = "https://github.com/zebradil/rustotpony"
+documentation = "https://github.com/zebradil/rustotpony"
+
+readme = "README.md"
+categories = ["command-line-utilities"]
+keywords = ["totp"]
+license = "MIT"
+
 [dependencies]
 base32 = "0.3.1"
 clap = "^2.29.0"
+keyring = "0.5.1"
 oath = "0.10.2"
 rand = "0.4.1"
 rpassword = "2.0.0"
 serde = "1.0.24"
 serde_derive = "1.0.24"
 serde_json = "1.0.8"
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+panic = "abort"

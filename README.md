@@ -8,9 +8,11 @@ without any encryption (will be added in the future).
 
 ### From source
 
-```sh
-$ cargo install
-```
+1. Clone this repo
+1. Run `cargo install` from the inside of the repo directory
+1. Keep calm and wait for compilation
+
+Probably, you need `gcc` (Linux) or `clang` (Mac OS) to compile dependencies.
 
 ## Usage
 

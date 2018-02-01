@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate ctrlc;
 extern crate rpassword;
 extern crate rustotpony;
 
@@ -126,6 +127,11 @@ impl Cli {
                 let mut is_first_iteration = true;
                 let lines_count = apps.len() + 1;
                 println!("Welcome to RusTOTPony realtime dashboard! Press ^C to quit.");
+                ctrlc::set_handler(move || {
+                    print!("\x1B[{}A\x1B[0G\x1B[0J", lines_count + 1);
+                    println!("I won't tell anyone about this 🤫");
+                    std::process::exit(0);
+                }).expect("Error setting Ctrl-C handler");
                 loop {
                     if is_first_iteration {
                         is_first_iteration = false;

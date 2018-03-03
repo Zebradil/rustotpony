@@ -78,7 +78,7 @@ impl Cli {
 
     fn get_cli_api_matches(&self) -> clap::ArgMatches<'static> {
         App::new("🐴  RusTOTPony")
-            .version("0.1.0")
+            .version(env!("CARGO_PKG_VERSION"))
             .author("German Lashevich <german.lashevich@gmail.com>")
             .about("CLI manager of one-time password generators aka Google Authenticator")
             .subcommand(

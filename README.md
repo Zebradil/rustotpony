@@ -1,5 +1,9 @@
 # 🐴 RusTOTPony
 
+[![Build Status](https://travis-ci.org/Zebradil/rustotpony.svg?branch=master)](https://travis-ci.org/Zebradil/rustotpony)
+[![Build status](https://ci.appveyor.com/api/projects/status/rx68dv1kjepslelh/branch/master?svg=true)](https://ci.appveyor.com/project/Zebradil/rustotpony/branch/master)
+
+
 CLI manager of one-time password generators aka Google Authenticator.
 Actually, it's simple in-file database which stores TOTP secret keys
 without any encryption (will be added in the future).

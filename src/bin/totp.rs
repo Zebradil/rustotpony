@@ -22,11 +22,18 @@ struct Cli {
 
 impl Cli {
     fn new() -> Self {
-        let db = JsonDatabase::new(Self::get_database_path());
+        let secret = Self::get_secret();
+        let db = JsonDatabase::new(Self::get_database_path(), &secret);
         Self {
             app: RusTOTPony::new(db),
         }
     }
+
+    fn get_secret() -> String {
+        return rpassword::prompt_password_stdout("Enter your database pass: ").unwrap();
+    }
+
+    // fn get_secret_from_storage() -> String { }
 
     fn run(&mut self) {
         match self.get_cli_api_matches().subcommand() {

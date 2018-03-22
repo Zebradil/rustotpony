@@ -1,0 +1,21 @@
+# Change approach for saving and loading data
+
+## On load
+
+1. Read encrypted data into memory
+2. Invoke decrypt function, which takes IV from the beginning of the data
+3. Retrieve secret
+4. Decrypt data
+5. Unserialize data
+
+## On save
+
+1. Serialize data
+2. Generate IV
+3. Retrieve secret
+4. Encrypt data
+5. Concatenate IV + encrypted data
+6. Save data to file
+
+# Implement secret retrieval from OS's keyring
+

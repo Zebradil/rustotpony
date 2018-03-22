@@ -132,6 +132,9 @@ impl Cli {
                     println!("I won't tell anyone about this 🤫");
                     std::process::exit(0);
                 }).expect("Error setting Ctrl-C handler");
+                // Prepare sorted keys for displaying apps in order
+                let mut keys: Vec<String> = apps.keys().map(|key| key.clone()).collect();
+                keys.sort();
                 loop {
                     if is_first_iteration {
                         is_first_iteration = false;
@@ -139,7 +142,8 @@ impl Cli {
                         print!("\x1B[{}A", lines_count);
                     }
                     Self::print_progress_bar();
-                    for (_, app) in apps {
+                    for key in keys.iter() {
+                        let app = &apps[key];
                         println!{"{:06} {}", app.get_code(), app.get_name()};
                     }
                     thread::sleep(Duration::from_millis(100));

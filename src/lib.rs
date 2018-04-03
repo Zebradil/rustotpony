@@ -130,15 +130,15 @@ struct DatabaseContentSchema {
 
 pub struct JsonDatabase {
     file_path: PathBuf,
-    secret: String,
+    secret_fn: &'static Fn() -> String,
 }
 
 const IV_SIZE: usize = 16;
 impl JsonDatabase {
-    pub fn new(path: PathBuf, secret: &str) -> JsonDatabase {
+    pub fn new(path: PathBuf, secret_fn: &'static Fn() -> String) -> JsonDatabase {
         JsonDatabase {
             file_path: path,
-            secret: String::from(secret),
+            secret_fn: secret_fn,
         }
     }
 
@@ -148,7 +148,7 @@ impl JsonDatabase {
             Err(ref err) if err.kind() == ErrorKind::NotFound => return Self::get_empty_schema(),
             Err(err) => panic!("There was a problem opening file: {:?}", err),
         };
-        let decrypted_data = Self::decrypt_data(&data, self.secret.as_str());
+        let decrypted_data = Self::decrypt_data(&data, (self.secret_fn)().as_str());
         serde_json::from_str(decrypted_data.as_str())
             .expect("Couldn't parse JSON from database file")
     }
@@ -184,7 +184,7 @@ impl JsonDatabase {
             Err(err) => panic!("Couldn't open database file: {:?}", err),
         };
         let data = serde_json::to_string(&content).expect("Couldn't serialize data to JSON");
-        let encrypted_data = Self::encrypt_data(&data, &self.secret);
+        let encrypted_data = Self::encrypt_data(&data, &(self.secret_fn)());
         file.write_all(&encrypted_data)
             .expect("Couldn't write data to database file");
     }

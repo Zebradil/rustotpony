@@ -20,8 +20,7 @@ struct Cli {}
 
 impl Cli {
     fn app() -> RusTOTPony<JsonDatabase> {
-        let secret = Self::get_secret();
-        let db = JsonDatabase::new(Self::get_database_path(), &secret);
+        let db = JsonDatabase::new(Self::get_database_path(), &Self::get_secret);
         RusTOTPony::new(db)
     }
 

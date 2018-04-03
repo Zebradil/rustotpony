@@ -9,8 +9,10 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
-use crypto::{aes, blockmodes, buffer, symmetriccipher};
 use crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
+use crypto::{aes, blockmodes, buffer, symmetriccipher};
 
 use rand::{OsRng, Rng};
 
@@ -134,6 +136,7 @@ pub struct JsonDatabase {
 }
 
 const IV_SIZE: usize = 16;
+const KEY_SIZE: usize = 32;
 impl JsonDatabase {
     pub fn new(path: PathBuf, secret_fn: &'static Fn() -> String) -> JsonDatabase {
         JsonDatabase {
@@ -142,31 +145,38 @@ impl JsonDatabase {
         }
     }
 
+    fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
+        let mut sha = Sha256::new();
+        sha.input_str(input);
+        let mut res: [u8; KEY_SIZE] = [0; KEY_SIZE];
+        sha.result(&mut res);
+        return res;
+    }
+
     fn read_database_file(&self) -> JsonDatabaseSchema {
-        let data = match std::fs::read_to_string(&self.file_path) {
+        let data = match std::fs::read(&self.file_path) {
             Ok(d) => d,
             Err(ref err) if err.kind() == ErrorKind::NotFound => return Self::get_empty_schema(),
             Err(err) => panic!("There was a problem opening file: {:?}", err),
         };
-        let decrypted_data = Self::decrypt_data(&data, (self.secret_fn)().as_str());
+        let decrypted_data =
+            Self::decrypt_data(&data, &Self::form_secret_key((self.secret_fn)().as_str()));
         serde_json::from_str(decrypted_data.as_str())
             .expect("Couldn't parse JSON from database file")
     }
 
-    fn decrypt_data(data: &str, key: &str) -> String {
-        let bytes = data.as_bytes();
-        String::from_utf8(
-            Self::decrypt(&bytes[IV_SIZE..], key.as_bytes(), &bytes[..IV_SIZE])
-                .expect("Couldn't decrypt data"),
-        ).ok()
+    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
+        let iv = &data[..IV_SIZE];
+        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
+            .ok()
             .unwrap()
     }
 
-    fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
-        let mut data_with_iv = Self::create_iv();
-        data_with_iv.extend(data.as_bytes());
-        return Self::encrypt(&data_with_iv, key.as_bytes(), &data_with_iv[..IV_SIZE])
-            .expect("Couldn't encrypt data");
+    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
+        let iv = Self::create_iv();
+        let encrypted_data =
+            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
+        [&iv, &encrypted_data[..]].concat()
     }
 
     fn create_iv() -> Vec<u8> {
@@ -184,7 +194,8 @@ impl JsonDatabase {
             Err(err) => panic!("Couldn't open database file: {:?}", err),
         };
         let data = serde_json::to_string(&content).expect("Couldn't serialize data to JSON");
-        let encrypted_data = Self::encrypt_data(&data, &(self.secret_fn)());
+        let encrypted_data =
+            Self::encrypt_data(&data, &Self::form_secret_key((self.secret_fn)().as_str()));
         file.write_all(&encrypted_data)
             .expect("Couldn't write data to database file");
     }

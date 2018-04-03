@@ -1,3 +1,5 @@
+#![feature(fs_read_write)]
+
 extern crate base32;
 extern crate crypto;
 extern crate oath;
@@ -15,6 +17,7 @@ use rand::{OsRng, Rng};
 use std::collections::HashMap;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::ErrorKind;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 const DATABASE_VERSION: u8 = 1;
@@ -130,6 +133,7 @@ pub struct JsonDatabase {
     secret: String,
 }
 
+const IV_SIZE: usize = 16;
 impl JsonDatabase {
     pub fn new(path: PathBuf, secret: &str) -> JsonDatabase {
         JsonDatabase {
@@ -139,22 +143,50 @@ impl JsonDatabase {
     }
 
     fn read_database_file(&self) -> JsonDatabaseSchema {
-        let file = match File::open(&self.file_path) {
-            Ok(f) => f,
+        let data = match std::fs::read_to_string(&self.file_path) {
+            Ok(d) => d,
             Err(ref err) if err.kind() == ErrorKind::NotFound => return Self::get_empty_schema(),
             Err(err) => panic!("There was a problem opening file: {:?}", err),
         };
-        serde_json::from_reader(file).expect("Couldn't parse JSON from database file")
+        let decrypted_data = Self::decrypt_data(&data, self.secret.as_str());
+        serde_json::from_str(decrypted_data.as_str())
+            .expect("Couldn't parse JSON from database file")
+    }
+
+    fn decrypt_data(data: &str, key: &str) -> String {
+        let bytes = data.as_bytes();
+        String::from_utf8(
+            Self::decrypt(&bytes[IV_SIZE..], key.as_bytes(), &bytes[..IV_SIZE])
+                .expect("Couldn't decrypt data"),
+        ).ok()
+            .unwrap()
+    }
+
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
+        let mut data_with_iv = Self::create_iv();
+        data_with_iv.extend(data.as_bytes());
+        return Self::encrypt(&data_with_iv, key.as_bytes(), &data_with_iv[..IV_SIZE])
+            .expect("Couldn't encrypt data");
+    }
+
+    fn create_iv() -> Vec<u8> {
+        let mut iv = vec![0; IV_SIZE];
+        let mut rng = OsRng::new().ok().unwrap();
+        rng.fill_bytes(&mut iv);
+        iv
     }
 
     fn save_database_file(&self, content: JsonDatabaseSchema) {
-        let file = match self.open_database_file_for_write() {
+        let mut file = match self.open_database_file_for_write() {
             Ok(f) => f,
             Err(ref err) if err.kind() == ErrorKind::NotFound => self.create_database_file()
                 .expect("Couldn't create database file"),
             Err(err) => panic!("Couldn't open database file: {:?}", err),
         };
-        serde_json::to_writer(file, &content).expect("Couldn't write JSON data to database file");
+        let data = serde_json::to_string(&content).expect("Couldn't serialize data to JSON");
+        let encrypted_data = Self::encrypt_data(&data, &self.secret);
+        file.write_all(&encrypted_data)
+            .expect("Couldn't write data to database file");
     }
 
     // Encrypt a buffer with the given key and iv using

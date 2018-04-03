@@ -240,9 +240,10 @@ impl Cli {
 
     fn create_application(name: &str, username: &str) {
         let secret = rpassword::prompt_password_stdout("Enter your secret code: ").unwrap();
-        match Self::app().create_application(name, username, &secret) {
+        let mut app = Self::app();
+        match app.create_application(name, username, &secret) {
             Ok(_) => {
-                Self::app().flush();
+                app.flush();
                 println!("New application created: {}", name)
             }
             Err(err) => println!("{} Aborting…", err),
@@ -250,9 +251,10 @@ impl Cli {
     }
 
     fn delete_application(name: &str) {
-        match Self::app().delete_application(name) {
+        let mut app = Self::app();
+        match app.delete_application(name) {
             Ok(_) => {
-                Self::app().flush();
+                app.flush();
                 println!("Application '{}' successfully deleted", name)
             }
             Err(err) => println!("Couldn't delete application '{}': {}", name, err),
@@ -260,9 +262,10 @@ impl Cli {
     }
 
     fn rename_application(name: &str, newname: &str) {
-        match Self::app().rename_application(name, newname) {
+        let mut app = Self::app();
+        match app.rename_application(name, newname) {
             Ok(_) => {
-                Self::app().flush();
+                app.flush();
                 println!(
                     "Application '{}' successfully renamed to '{}'",
                     name, newname
@@ -273,8 +276,9 @@ impl Cli {
     }
 
     fn eradicate_database() {
-        Self::app().delete_all_applications();
-        Self::app().flush();
+        let mut app = Self::app();
+        app.delete_all_applications();
+        app.flush();
         println!("Done.");
     }
 }

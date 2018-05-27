@@ -14,14 +14,18 @@ version = "0.2.1"
 [dependencies]
 base32 = "0.3.1"
 clap = "^2.29.0"
-ctrlc = { version = "3.0", features = ["termination"] }
-keyring = "0.5.1"
+keyring = "0.6.0"
 oath = "0.10.2"
 rand = "0.4.1"
 rpassword = "2.0.0"
+rust-crypto = "0.2.36"
 serde = "1.0.24"
 serde_derive = "1.0.24"
 serde_json = "1.0.8"
+
+[dependencies.ctrlc]
+features = ["termination"]
+version = "3.0"
 [profile.release]
 debug = false
 lto = true

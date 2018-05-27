@@ -13,50 +13,52 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 const CONFIG_PATH: &str = ".rustotpony/db.json";
 
 fn main() {
-    Cli::new().run();
+    Cli::run();
 }
 
-struct Cli {
-    app: RusTOTPony<JsonDatabase>,
-}
+struct Cli {}
 
 impl Cli {
-    fn new() -> Self {
-        let db = JsonDatabase::new(Self::get_database_path());
-        Self {
-            app: RusTOTPony::new(db),
-        }
+    fn app() -> RusTOTPony<JsonDatabase> {
+        let db = JsonDatabase::new(Self::get_database_path(), &Self::get_secret);
+        RusTOTPony::new(db)
     }
 
-    fn run(&mut self) {
-        match self.get_cli_api_matches().subcommand() {
+    fn get_secret() -> String {
+        return rpassword::prompt_password_stdout("Enter your database pass: ").unwrap();
+    }
+
+    // fn get_secret_from_storage() -> String { }
+
+    fn run() {
+        match Self::get_cli_api_matches().subcommand() {
             ("dash", Some(_)) => {
-                self.show_dashboard();
+                Self::show_dashboard();
             }
             ("list", Some(_)) => {
-                self.show_applications_list(false);
+                Self::show_applications_list(false);
             }
             // ("show-all", Some(_)) => {
-            //     self.show_applications_list(true);
+            //     Self::show_applications_list(true);
             // }
             // ("show", Some(sub_app)) => {
             //     let app_name: &str = sub_app
             //         .value_of("APPNAME")
             //         .expect("Couldn't read APPNAME for 'show' command");
-            //     self.show_application(app_name);
+            //     Self::show_application(app_name);
             // }
             ("add", Some(sub_app)) => {
                 let app_name: &str = sub_app
                     .value_of("APPNAME")
                     .expect("Couldn't read APPNAME for 'add' command");
                 let key: &str = sub_app.value_of("USERNAME").unwrap_or("");
-                self.create_application(app_name, key);
+                Self::create_application(app_name, key);
             }
             ("delete", Some(sub_app)) => {
                 let app_name: &str = sub_app
                     .value_of("APPNAME")
                     .expect("Couldn't read APPNAME for 'delete' command");
-                self.delete_application(app_name);
+                Self::delete_application(app_name);
             }
             ("rename", Some(sub_app)) => {
                 let app_name: &str = sub_app
@@ -65,18 +67,18 @@ impl Cli {
                 let new_name: &str = sub_app
                     .value_of("NEWNAME")
                     .expect("Couldn't read NEWNAME for 'rename' command");
-                self.rename_application(app_name, new_name);
+                Self::rename_application(app_name, new_name);
             }
             ("eradicate", Some(_)) => {
-                self.eradicate_database();
+                Self::eradicate_database();
             }
             _ => {
-                self.show_dashboard();
+                Self::show_dashboard();
             }
         }
     }
 
-    fn get_cli_api_matches(&self) -> clap::ArgMatches<'static> {
+    fn get_cli_api_matches() -> clap::ArgMatches<'static> {
         App::new("🐴  RusTOTPony")
             .version(env!("CARGO_PKG_VERSION"))
             .author("German Lashevich <german.lashevich@gmail.com>")
@@ -121,8 +123,8 @@ impl Cli {
         home.join(Path::new(CONFIG_PATH))
     }
 
-    fn show_dashboard(&self) {
-        match self.app.get_applications() {
+    fn show_dashboard() {
+        match Self::app().get_applications() {
             Ok(apps) => {
                 let mut is_first_iteration = true;
                 let lines_count = apps.len() + 1;
@@ -164,11 +166,12 @@ impl Cli {
         println!("[{:60}]", "=".repeat(idx as usize));
     }
 
-    fn show_applications_list(&self, _: bool) {
+    fn show_applications_list(_: bool) {
         // TODO Create Table structure with HashMap as follows and metadata about columns - width, titles, names
+        let app = Self::app();
         let mut output_table: HashMap<&str, Vec<&str>> = HashMap::new();
         let mut applications_count = 0;
-        let apps = match self.app.get_applications() {
+        let apps = match app.get_applications() {
             Ok(v) => v,
             Err(e) => {
                 println!("{}", e);
@@ -235,35 +238,38 @@ impl Cli {
         println!("{}", header_row_delimiter);
     }
 
-    fn show_application(&self, name: &str) {
-        println!("{:?}", self.app.get_application(name));
+    fn show_application(name: &str) {
+        println!("{:?}", Self::app().get_application(name));
     }
 
-    fn create_application(&mut self, name: &str, username: &str) {
+    fn create_application(name: &str, username: &str) {
         let secret = rpassword::prompt_password_stdout("Enter your secret code: ").unwrap();
-        match self.app.create_application(name, username, &secret) {
+        let mut app = Self::app();
+        match app.create_application(name, username, &secret) {
             Ok(_) => {
-                self.app.flush();
+                app.flush();
                 println!("New application created: {}", name)
             }
             Err(err) => println!("{} Aborting…", err),
         }
     }
 
-    fn delete_application(&mut self, name: &str) {
-        match self.app.delete_application(name) {
+    fn delete_application(name: &str) {
+        let mut app = Self::app();
+        match app.delete_application(name) {
             Ok(_) => {
-                self.app.flush();
+                app.flush();
                 println!("Application '{}' successfully deleted", name)
             }
             Err(err) => println!("Couldn't delete application '{}': {}", name, err),
         };
     }
 
-    fn rename_application(&mut self, name: &str, newname: &str) {
-        match self.app.rename_application(name, newname) {
+    fn rename_application(name: &str, newname: &str) {
+        let mut app = Self::app();
+        match app.rename_application(name, newname) {
             Ok(_) => {
-                self.app.flush();
+                app.flush();
                 println!(
                     "Application '{}' successfully renamed to '{}'",
                     name, newname
@@ -273,9 +279,10 @@ impl Cli {
         };
     }
 
-    fn eradicate_database(&mut self) {
-        self.app.delete_all_applications();
-        self.app.flush();
+    fn eradicate_database() {
+        let mut app = Self::app();
+        app.delete_all_applications();
+        app.flush();
         println!("Done.");
     }
 }

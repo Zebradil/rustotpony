@@ -46,12 +46,9 @@ Steps:
 1. Add new generator with `totp add GENNAME` (you will be asked for your secret)
 1. Check new generator by `totp list` or just display dashboard with one-time passwords with `totp dash`
 
-#### WARNING: Currently there is no encryption of the application database. Be careful with `~/.rustotpony/db.json` and keep it safe.
-
 ## TODO
 
 - command completion
-- database encryption
 - database password caching
 - tests
 - binaries for main platforms

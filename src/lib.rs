@@ -1,5 +1,4 @@
-#![feature(fs_read_write)]
-
+extern crate dirs;
 extern crate base32;
 extern crate crypto;
 extern crate oath;
@@ -300,7 +299,7 @@ impl JsonDatabase {
     }
 
     fn create_database_file(&self) -> Result<File, std::io::Error> {
-        let dir = std::env::home_dir().unwrap_or(PathBuf::from("."));
+        let dir = dirs::home_dir().unwrap_or(PathBuf::from("."));
         if let Some(parent_dir) = Path::new(&self.file_path).parent() {
             let dir = dir.join(parent_dir);
             create_dir_all(dir)?;

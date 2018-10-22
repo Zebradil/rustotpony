@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate dirs;
 extern crate ctrlc;
 extern crate rpassword;
 extern crate rustotpony;
@@ -119,7 +120,7 @@ impl Cli {
     }
 
     fn get_database_path() -> PathBuf {
-        let home = std::env::home_dir().unwrap_or(PathBuf::from("."));
+        let home = dirs::home_dir().unwrap_or(PathBuf::from("."));
         home.join(Path::new(CONFIG_PATH))
     }
 

@@ -23,7 +23,7 @@ $ cargo install rustotpony
 1. Run `cargo install` from the inside of the repo directory
 1. Keep calm and wait for compilation
 
-Probably, you need `gcc` (Linux) or `clang` (Mac OS) to compile dependencies.
+Probably, you will need `gcc` (Linux) or `clang` (Mac OS) to compile dependencies.
 
 ## Usage
 

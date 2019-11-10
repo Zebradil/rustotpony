@@ -1,6 +1,6 @@
-extern crate dirs;
 extern crate base32;
 extern crate crypto;
+extern crate dirs;
 extern crate oath;
 extern crate rand;
 extern crate serde_json;
@@ -131,13 +131,13 @@ struct DatabaseContentSchema {
 
 pub struct JsonDatabase {
     file_path: PathBuf,
-    secret_fn: &'static Fn() -> String,
+    secret_fn: &'static dyn Fn() -> String,
 }
 
 const IV_SIZE: usize = 16;
 const KEY_SIZE: usize = 32;
 impl JsonDatabase {
-    pub fn new(path: PathBuf, secret_fn: &'static Fn() -> String) -> JsonDatabase {
+    pub fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> JsonDatabase {
         JsonDatabase {
             file_path: path,
             secret_fn: secret_fn,
@@ -188,7 +188,8 @@ impl JsonDatabase {
     fn save_database_file(&self, content: JsonDatabaseSchema) {
         let mut file = match self.open_database_file_for_write() {
             Ok(f) => f,
-            Err(ref err) if err.kind() == ErrorKind::NotFound => self.create_database_file()
+            Err(ref err) if err.kind() == ErrorKind::NotFound => self
+                .create_database_file()
                 .expect("Couldn't create database file"),
             Err(err) => panic!("Couldn't open database file: {:?}", err),
         };
@@ -242,7 +243,7 @@ impl JsonDatabase {
         // us that it stopped processing data due to not having any more data in the
         // input buffer.
         loop {
-            let result = try!(encryptor.encrypt(&mut read_buffer, &mut write_buffer, true));
+            let result = encryptor.encrypt(&mut read_buffer, &mut write_buffer, true)?;
 
             // "write_buffer.take_read_buffer().take_remaining()" means:
             // from the writable buffer, create a new readable buffer which
@@ -281,7 +282,7 @@ impl JsonDatabase {
         let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
 
         loop {
-            let result = try!(decryptor.decrypt(&mut read_buffer, &mut write_buffer, true));
+            let result = decryptor.decrypt(&mut read_buffer, &mut write_buffer, true)?;
             final_result.extend(
                 write_buffer
                     .take_read_buffer()

@@ -13,7 +13,7 @@ use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use crypto::{aes, blockmodes, buffer, symmetriccipher};
 
-use rand::{OsRng, Rng};
+use rand::prelude::*;
 
 use std::collections::HashMap;
 use std::fs::{create_dir_all, File, OpenOptions};
@@ -180,7 +180,7 @@ impl JsonDatabase {
 
     fn create_iv() -> Vec<u8> {
         let mut iv = vec![0; IV_SIZE];
-        let mut rng = OsRng::new().ok().unwrap();
+        let mut rng = rand::thread_rng();
         rng.fill_bytes(&mut iv);
         iv
     }

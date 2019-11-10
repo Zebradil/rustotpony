@@ -9,20 +9,20 @@ license = "MIT"
 name = "rustotpony"
 readme = "README.md"
 repository = "https://github.com/zebradil/rustotpony"
-version = "0.2.4"
+version = "0.2.5"
 
 [dependencies]
-base32 = "0.3.1"
+base32 = "0.4.0"
 clap = "^2.29.0"
-keyring = "0.6.0"
+keyring = "0.7.1"
 oath = "0.10.2"
-rand = "0.4.1"
-rpassword = "2.0.0"
+rand = "0.7"
+rpassword = "4.0"
 rust-crypto = "0.2.36"
 serde = "1.0.24"
 serde_derive = "1.0.24"
 serde_json = "1.0.8"
-dirs = "1.0.4"
+dirs = "2.0.2"
 
 [dependencies.ctrlc]
 features = ["termination"]

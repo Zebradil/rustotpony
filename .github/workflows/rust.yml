@@ -11,6 +11,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
+    - name: Install latest stable
+      if: matrix.os == 'macos-latest'
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
     - uses: actions/checkout@v1
     - name: Cache target directory
       uses: actions/cache@v1

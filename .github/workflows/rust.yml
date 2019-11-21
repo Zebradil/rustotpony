@@ -9,8 +9,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Cache Primes
-      id: cache-primes
+    - name: Cache target directory
       uses: actions/cache@v1
       with:
         path: target

@@ -9,6 +9,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Cache Primes
+      id: cache-primes
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.OS }}-target-${{ github.ref }}
+        restore-keys: |
+          ${{ runner.OS }}-target-master
+          ${{ runner.OS }}-target-
     - name: Build
       run: cargo build --verbose
     - name: Run tests

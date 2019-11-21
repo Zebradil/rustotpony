@@ -1,6 +1,6 @@
 extern crate clap;
-extern crate dirs;
 extern crate ctrlc;
+extern crate dirs;
 extern crate rpassword;
 extern crate rustotpony;
 
@@ -26,7 +26,7 @@ impl Cli {
     }
 
     fn get_secret() -> String {
-        return rpassword::prompt_password_stdout("Enter your database pass: ").unwrap();
+        rpassword::prompt_password_stdout("Enter your database pass: ").unwrap()
     }
 
     // fn get_secret_from_storage() -> String { }
@@ -120,7 +120,7 @@ impl Cli {
     }
 
     fn get_database_path() -> PathBuf {
-        let home = dirs::home_dir().unwrap_or(PathBuf::from("."));
+        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         home.join(Path::new(CONFIG_PATH))
     }
 
@@ -134,9 +134,10 @@ impl Cli {
                     print!("\x1B[{}A\x1B[0G\x1B[0J", lines_count + 1);
                     println!("I won't tell anyone about this 🤫");
                     std::process::exit(0);
-                }).expect("Error setting Ctrl-C handler");
+                })
+                .expect("Error setting Ctrl-C handler");
                 // Prepare sorted keys for displaying apps in order
-                let mut keys: Vec<String> = apps.keys().map(|key| key.clone()).collect();
+                let mut keys: Vec<String> = apps.keys().cloned().collect();
                 keys.sort();
                 loop {
                     if is_first_iteration {
@@ -147,7 +148,7 @@ impl Cli {
                     Self::print_progress_bar();
                     for key in keys.iter() {
                         let app = &apps[key];
-                        println!{"{:06} {}", app.get_code(), app.get_name()};
+                        println! {"{:06} {}", app.get_code(), app.get_name()};
                     }
                     thread::sleep(Duration::from_millis(100));
                 }
@@ -179,19 +180,19 @@ impl Cli {
                 return;
             }
         };
-        for (_, application) in apps {
+        for application in apps.values() {
             applications_count += 1;
             output_table
                 .entry("name")
-                .or_insert(Vec::new())
+                .or_insert_with(Vec::new)
                 .push(application.get_name());
             output_table
                 .entry("key")
-                .or_insert(Vec::new())
+                .or_insert_with(Vec::new)
                 .push(application.get_secret());
             output_table
                 .entry("username")
-                .or_insert(Vec::new())
+                .or_insert_with(Vec::new)
                 .push(application.get_username());
         }
         let name_max_length = output_table["name"]

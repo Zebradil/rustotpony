@@ -47,16 +47,16 @@ impl<DB: Database> RusTOTPony<DB> {
             if self.applications.contains_key(name) {
                 Err(format!("Application with name '{}' already exists!", name))
             } else {
-                &self.applications.insert(String::from(name), new_app);
+                self.applications.insert(String::from(name), new_app);
                 Ok(())
             }
         } else {
-            return Err(String::from("Couldn't decode secret key"));
+            Err(String::from("Couldn't decode secret key"))
         }
     }
 
     pub fn delete_application(&mut self, name: &str) -> Result<(), String> {
-        if let Some(_) = self.applications.remove(name) {
+        if self.applications.remove(name).is_some() {
             Ok(())
         } else {
             Err(format!(
@@ -76,7 +76,7 @@ impl<DB: Database> RusTOTPony<DB> {
     }
 
     pub fn get_applications(&self) -> Result<&HashMap<String, GenApp>, String> {
-        if self.applications.len() == 0 {
+        if self.applications.is_empty() {
             Err(String::from("There are no applications"))
         } else {
             Ok(&self.applications)
@@ -96,7 +96,7 @@ impl<DB: Database> RusTOTPony<DB> {
     }
 
     pub fn flush(&self) {
-        &self.database.save_applications(&self.applications);
+        self.database.save_applications(&self.applications);
     }
 }
 
@@ -140,7 +140,7 @@ impl JsonDatabase {
     pub fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> JsonDatabase {
         JsonDatabase {
             file_path: path,
-            secret_fn: secret_fn,
+            secret_fn,
         }
     }
 
@@ -149,7 +149,7 @@ impl JsonDatabase {
         sha.input_str(input);
         let mut res: [u8; KEY_SIZE] = [0; KEY_SIZE];
         sha.result(&mut res);
-        return res;
+        res
     }
 
     fn read_database_file(&self) -> JsonDatabaseSchema {
@@ -254,7 +254,7 @@ impl JsonDatabase {
                     .take_read_buffer()
                     .take_remaining()
                     .iter()
-                    .map(|&i| i),
+                    .copied(),
             );
 
             match result {
@@ -288,7 +288,7 @@ impl JsonDatabase {
                     .take_read_buffer()
                     .take_remaining()
                     .iter()
-                    .map(|&i| i),
+                    .copied(),
             );
             match result {
                 BufferResult::BufferUnderflow => break,
@@ -300,7 +300,7 @@ impl JsonDatabase {
     }
 
     fn create_database_file(&self) -> Result<File, std::io::Error> {
-        let dir = dirs::home_dir().unwrap_or(PathBuf::from("."));
+        let dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         if let Some(parent_dir) = Path::new(&self.file_path).parent() {
             let dir = dir.join(parent_dir);
             create_dir_all(dir)?;
@@ -340,7 +340,7 @@ impl GenApp {
             name: String::from(name),
             secret: String::from(secret),
             username: String::from(username),
-            secret_bytes: secret_bytes,
+            secret_bytes,
         }
     }
 

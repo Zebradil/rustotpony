@@ -1,4 +1,4 @@
-name: Rust
+name: build
 
 on: [push]
 
@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - name: Install latest stable
@@ -21,9 +21,10 @@ jobs:
       uses: actions/cache@v1
       with:
         path: target
-        key: ${{ runner.OS }}-target-${{ github.ref }}
+        key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.OS }}-target-master
+          ${{ runner.OS }}-target-${{ github.ref }}-
+          ${{ runner.OS }}-target-master-
           ${{ runner.OS }}-target-
     - name: Build
       run: cargo build --verbose

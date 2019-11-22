@@ -1,6 +1,6 @@
 # 🐴 RusTOTPony
 
-![](https://github.com/zebradil/rustotpony/workflows/Rust/badge.svg)
+![](https://github.com/zebradil/rustotpony/workflows/build/badge.svg)
 [![Build Status](https://travis-ci.org/Zebradil/rustotpony.svg?branch=master)](https://travis-ci.org/Zebradil/rustotpony)
 [![Build status](https://ci.appveyor.com/api/projects/status/rx68dv1kjepslelh/branch/master?svg=true)](https://ci.appveyor.com/project/Zebradil/rustotpony/branch/master)
 

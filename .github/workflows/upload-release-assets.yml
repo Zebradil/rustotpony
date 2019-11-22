@@ -1,0 +1,46 @@
+name: upload-release-assets
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  assets:
+    name: Build and upload release assets
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: Install latest stable rust toolchain
+      if: matrix.os == 'macos-latest'
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+
+    - uses: actions/checkout@v1
+      name: Checkout code
+
+    - name: Restore cache
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.OS }}-target-${{ github.ref }}-
+          ${{ runner.OS }}-target-master-
+          ${{ runner.OS }}-target-
+
+    - name: Build release
+      run: cargo build --release
+
+    - name: Upload release asset
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.assets_url }}
+        asset_path: target/release/totp
+        asset_name: totp-${{ runner.OS }}
+        asset_content_type: application/octet-stream

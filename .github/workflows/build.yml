@@ -2,10 +2,8 @@ name: build
 
 on:
   push:
-    branches:
-    - '*'
-    tags-ignore:
-    - '*'
+    branches-ignore:
+    - 'refs/tags/*'
 
 jobs:
   build:

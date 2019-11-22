@@ -34,18 +34,13 @@ jobs:
 
     - name: Build release
       run: cargo build --release
-    
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: echo "$GITHUB_CONTEXT"
 
     - name: Upload release asset
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.assets_url }}
+        upload_url: ${{ github.event.release.assets_url }}
         asset_path: target/release/totp
         asset_name: totp-${{ runner.OS }}
         asset_content_type: application/octet-stream

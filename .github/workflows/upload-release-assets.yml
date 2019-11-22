@@ -34,6 +34,11 @@ jobs:
 
     - name: Build release
       run: cargo build --release
+    
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
 
     - name: Upload release asset
       uses: actions/upload-release-asset@v1.0.1

@@ -44,6 +44,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.assets_url }}
-        asset_path: target/release/totp
+        asset_path: ./target/release/totp
         asset_name: totp-${{ runner.OS }}
         asset_content_type: application/octet-stream

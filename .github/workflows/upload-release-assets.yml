@@ -36,7 +36,7 @@ jobs:
       run: cargo build --release
 
     - name: List dir
-      run: ls -lr
+      run: ls -lR
 
     - name: Upload release asset
       uses: actions/upload-release-asset@v1.0.1

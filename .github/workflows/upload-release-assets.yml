@@ -37,7 +37,7 @@ jobs:
       run: cargo build --release
 
     - name: List dir
-      run: ls -lR
+      run: dir /s
 
     - name: Upload release asset
       uses: zebradil/upload-release-asset@investigation
@@ -45,6 +45,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./target/release/totp
+        asset_path: target\\release\\totp.exe
         asset_name: totp-${{ runner.OS }}
         asset_content_type: application/octet-stream

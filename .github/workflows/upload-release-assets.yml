@@ -39,7 +39,7 @@ jobs:
       run: ls -lR
 
     - name: Upload release asset
-      uses: actions/upload-release-asset@v1.0.1
+      uses: zebradil/upload-release-asset@investigation
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:

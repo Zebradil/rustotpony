@@ -3,12 +3,11 @@ name: release
 on:
   push:
     tags:
-    - '*'
-    branches:
-    - master
+    - 'v*'
 
 jobs:
   release:
+    if: ${{ github.ref == 'refs/heads/master' }}
     name: Create release
     runs-on: ubuntu-latest
     steps:

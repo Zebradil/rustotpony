@@ -8,15 +8,19 @@ It is a desktop alternative for Google Authenticator.
 
 ## Installation
 
-Make sure you have `$HOME/.cargo/bin` in your `$PATH`.
+Grab an appropriate binary from [the latest release](https://github.com/Zebradil/rustotpony/releases/latest).
 
-### From crates.io
+### Build manually
+
+#### From crates.io
+
+Make sure you have `$HOME/.cargo/bin` in your `$PATH`.
 
 ```sh
 $ cargo install rustotpony
 ```
 
-### From source
+#### From source
 
 1. Clone this repo
 1. Run `cargo install` from the inside of the repo directory
@@ -106,7 +110,6 @@ At the very first run `totp` asks for a password for a new database. It's locate
 - command completion
 - database password caching
 - tests
-- binaries for main platforms
 - refactor `show` and `show-all` commands
 
 ## License

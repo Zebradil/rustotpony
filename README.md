@@ -8,7 +8,8 @@ It is a desktop alternative for Google Authenticator.
 
 ## Installation
 
-Grab an appropriate binary from [the latest release](https://github.com/Zebradil/rustotpony/releases/latest).
+Grab an appropriate binary from [the latest release](https://github.com/Zebradil/rustotpony/releases/latest) and put it
+in a place of your choice. If you're on *nix system, don't forget to set proper permissions: `chmod +x totp`.
 
 ### Build manually
 

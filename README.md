@@ -1,5 +1,6 @@
 # 🐴 RusTOTPony
 
+![crates.io](https://img.shields.io/crates/v/rustotpony.svg)
 ![](https://github.com/zebradil/rustotpony/workflows/build/badge.svg)
 
 

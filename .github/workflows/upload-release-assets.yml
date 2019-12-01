@@ -12,21 +12,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@master
 
-    - name: Inspect working copy
-      run: |
-        git status
-        git diff
-
     - name: Publish on crates.io
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: cargo publish
-
-    - name: Inspect working copy
-      if: failure()
-      run: |
-        git status
-        git diff
 
   assets:
     name: Build and upload release assets

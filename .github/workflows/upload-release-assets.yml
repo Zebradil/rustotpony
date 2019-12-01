@@ -5,6 +5,18 @@ on:
     types: [created]
 
 jobs:
+  crates:
+    name: Upload crate to crates.io
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@master
+
+    - name: Publish on crates.io
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      run: cargo publish
+
   assets:
     name: Build and upload release assets
     runs-on: ${{ matrix.os }}

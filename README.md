@@ -1,8 +1,6 @@
 # 🐴 RusTOTPony
 
 ![](https://github.com/zebradil/rustotpony/workflows/build/badge.svg)
-[![Build Status](https://travis-ci.org/Zebradil/rustotpony.svg?branch=master)](https://travis-ci.org/Zebradil/rustotpony)
-[![Build status](https://ci.appveyor.com/api/projects/status/rx68dv1kjepslelh/branch/master?svg=true)](https://ci.appveyor.com/project/Zebradil/rustotpony/branch/master)
 
 
 CLI manager of [time-based one-time password](https://en.wikipedia.org/wiki/Time-based_One-time_Password_algorithm) generators.

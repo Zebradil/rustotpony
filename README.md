@@ -9,6 +9,15 @@ It is a desktop alternative for Google Authenticator.
 
 ## Installation
 
+### Arch Linux
+
+Packages, available in [AUR](https://aur.archlinux.org/):
+
+- [rustotpony](https://aur.archlinux.org/packages/rustotpony/)
+- [rustotpony-bin](https://aur.archlinux.org/packages/rustotpony-bin/)
+
+### Other
+
 Grab an appropriate binary from [the latest release](https://github.com/Zebradil/rustotpony/releases/latest) and put it
 in a place of your choice. If you're on *nix system, don't forget to set proper permissions: `chmod +x totp`.
 

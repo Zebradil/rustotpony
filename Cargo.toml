@@ -22,7 +22,7 @@ rust-crypto = "0.2.36"
 serde = "1.0.24"
 serde_derive = "1.0.24"
 serde_json = "1.0.8"
-dirs = "2.0.2"
+dirs = "4.0.0"
 
 [dependencies.ctrlc]
 features = ["termination"]

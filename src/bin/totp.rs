@@ -26,7 +26,7 @@ impl Cli {
     }
 
     fn get_secret() -> String {
-        rpassword::prompt_password_stdout("Enter your database pass: ").unwrap()
+        rpassword::prompt_password("Enter your database pass: ").unwrap()
     }
 
     // fn get_secret_from_storage() -> String { }
@@ -245,7 +245,7 @@ impl Cli {
     }
 
     fn create_application(name: &str, username: &str) {
-        let secret = rpassword::prompt_password_stdout("Enter your secret code: ").unwrap();
+        let secret = rpassword::prompt_password("Enter your secret code: ").unwrap();
         let mut app = Self::app();
         match app.create_application(name, username, &secret) {
             Ok(_) => {

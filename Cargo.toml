@@ -9,7 +9,7 @@ license = "MIT"
 name = "rustotpony"
 readme = "README.md"
 repository = "https://github.com/zebradil/rustotpony"
-version = "0.2.6"
+version = "0.3.0"
 
 [dependencies]
 base32 = "0.4.0"

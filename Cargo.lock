@@ -913,7 +913,7 @@ checksum = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 
 [[package]]
 name = "rustotpony"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "base32",
  "clap",

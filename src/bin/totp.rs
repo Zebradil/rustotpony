@@ -16,6 +16,15 @@ const CONFIG_PATH: &str = ".rustotpony/db.json";
 #[derive(Parser)]
 #[command(name = "🐴 RusTOTPony")]
 #[command(author, about, version, long_about = None)]
+#[command(help_template = "\
+{before-help}{name} {version}
+
+{about-with-newline}
+{usage-heading} {usage}
+{all-args}
+
+By {author-with-newline}{after-help}\
+")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,

@@ -42,7 +42,7 @@ Probably, you will need `gcc` (Linux) or `clang` (Mac OS) to compile dependencie
 
 ```text
 $ totp help
-🐴 RusTOTPony 0.3.1
+🐴 RusTOTPony 0.3.2
 
 Manager of one-time password generators
 

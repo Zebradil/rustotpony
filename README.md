@@ -42,27 +42,23 @@ Probably, you will need `gcc` (Linux) or `clang` (Mac OS) to compile dependencie
 
 ```text
 $ totp help
-🐴  RusTOTPony 0.2.3
-German Lashevich <german.lashevich@gmail.com>
-CLI manager of one-time password generators aka Google Authenticator
+🐴 RusTOTPony 0.3.1
 
-USAGE:
-    totp [SUBCOMMAND]
+Manager of one-time password generators
 
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+Usage: totp [COMMAND]
+Commands:
+  dash       Show realtime dashboard with all generators
+  list       List all generators
+  add        Add a new generator
+  delete     Delete a generator
+  rename     Rename a generator
+  eradicate  Delete all generators
+  help       Print this message or the help of the given subcommand(s)
 
-SUBCOMMANDS:
-    add          Add a new generator
-    dash         Show realtime dashboard with all generators
-    delete       Delete generator
-    eradicate    Delete all generators
-    help         Prints this message or the help of the given subcommand(s)
-    list         List all generators
-    rename       Rename generator
-
-Try `totp help [SUBCOMMAND]` to see help for the given subcommand
+Options:
+  -h, --help     Print help information
+  -V, --version  Print version information
 ```
 
 ### Choose your password wisely

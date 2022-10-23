@@ -148,7 +148,7 @@ impl Cli {
                     Self::print_progress_bar();
                     for key in keys.iter() {
                         let app = &apps[key];
-                        println! {"{:06} {}", app.get_code(), app.get_name()};
+                        println! {"{} {}", app.get_code(), app.get_name()};
                     }
                     thread::sleep(Duration::from_millis(100));
                 }

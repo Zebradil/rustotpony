@@ -1,9 +1,9 @@
 extern crate base32;
 extern crate crypto;
 extern crate dirs;
-extern crate oath;
 extern crate rand;
 extern crate serde_json;
+extern crate totp_lite;
 
 #[macro_use]
 extern crate serde_derive;
@@ -13,6 +13,8 @@ use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use crypto::{aes, blockmodes, buffer, symmetriccipher};
 
+use totp_lite::{totp_custom, Sha1, DEFAULT_STEP};
+
 use rand::prelude::*;
 
 use std::collections::HashMap;
@@ -20,6 +22,7 @@ use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::ErrorKind;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 const DATABASE_VERSION: u8 = 1;
 
@@ -356,7 +359,7 @@ impl GenApp {
         self.username.as_str()
     }
 
-    pub fn get_code(&self) -> u64 {
+    pub fn get_code(&self) -> String {
         Self::totp(&self.secret_bytes)
     }
 
@@ -364,7 +367,11 @@ impl GenApp {
         base32::decode(base32::Alphabet::RFC4648 { padding: false }, secret)
     }
 
-    fn totp(secret_bytes: &[u8]) -> u64 {
-        oath::totp_raw_now(&secret_bytes, 6, 0, 30, &oath::HashType::SHA1)
+    fn totp(secret_bytes: &[u8]) -> String {
+        let seconds: u64 = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        totp_custom::<Sha1>(DEFAULT_STEP, 6, secret_bytes, seconds)
     }
 }

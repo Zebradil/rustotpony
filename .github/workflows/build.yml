@@ -19,9 +19,9 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
           toolchain: stable
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: Cache target directory
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: target
         key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}

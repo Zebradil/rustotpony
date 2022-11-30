@@ -13,15 +13,15 @@ version = "0.3.2"
 
 [dependencies]
 base32 = "0.4.0"
-clap = { version = "^4.0.18", features = ["derive"] }
+clap = { version = "^4.0.29", features = ["derive"] }
 keyring = "^1.2.0"
 totp-lite = "2.0.0"
 rand = "^0.8.5"
-rpassword = "^7.1.0"
+rpassword = "^7.2.0"
 rust-crypto = "0.2.36"
-serde = "1.0.147"
-serde_derive = "1.0.147"
-serde_json = "1.0.87"
+serde = "1.0.148"
+serde_derive = "1.0.148"
+serde_json = "1.0.89"
 dirs = "^4.0.0"
 
 [dependencies.ctrlc]

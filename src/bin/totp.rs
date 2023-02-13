@@ -57,6 +57,8 @@ enum Commands {
     },
     /// Delete all generators
     Eradicate {},
+    /// Export all generators as JSON
+    Export {},
 }
 
 fn main() {
@@ -80,6 +82,9 @@ fn main() {
         }
         Some(Commands::Eradicate {}) => {
             eradicate_database();
+        }
+        Some(Commands::Export {}) => {
+            export_database();
         }
         _ => {
             show_dashboard();
@@ -259,4 +264,18 @@ fn eradicate_database() {
     app.delete_all_applications();
     app.flush();
     println!("Done.");
+}
+
+/// Export database as JSON
+fn export_database() {
+    let app = app();
+    let apps = match app.get_applications() {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    };
+    let json = serde_json::to_string_pretty(&apps).unwrap();
+    println!("{}", json);
 }

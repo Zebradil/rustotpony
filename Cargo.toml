@@ -21,7 +21,7 @@ rpassword = "^7.2.0"
 rust-crypto = "0.2.36"
 serde = "1.0.152"
 serde_derive = "1.0.152"
-serde_json = "1.0.92"
+serde_json = "1.0.93"
 dirs = "^4.0.0"
 
 [dependencies.ctrlc]

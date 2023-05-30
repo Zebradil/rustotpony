@@ -13,8 +13,8 @@ version = "0.4.1"
 
 [dependencies]
 base32 = "0.4.0"
-clap = { version = "^4.2.7", features = ["derive"] }
-keyring = "^2.0.2"
+clap = { version = "^4.3.0", features = ["derive"] }
+keyring = "^2.0.3"
 totp-lite = "2.0.0"
 rand = "^0.8.5"
 rpassword = "^7.2.0"
@@ -26,7 +26,7 @@ dirs = "^5.0.1"
 
 [dependencies.ctrlc]
 features = ["termination"]
-version = "3.2"
+version = "3.4"
 
 [profile.release]
 debug = false

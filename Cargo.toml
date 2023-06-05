@@ -13,7 +13,7 @@ version = "0.4.1"
 
 [dependencies]
 base32 = "0.4.0"
-clap = { version = "^4.3.0", features = ["derive"] }
+clap = { version = "^4.3.1", features = ["derive"] }
 keyring = "^2.0.3"
 totp-lite = "2.0.0"
 rand = "^0.8.5"

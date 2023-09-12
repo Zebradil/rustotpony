@@ -41,7 +41,7 @@ jobs:
       with:
           toolchain: stable
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       name: Checkout code
 
     - name: Restore cache

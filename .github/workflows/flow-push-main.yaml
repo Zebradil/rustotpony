@@ -100,7 +100,7 @@ jobs:
         with:
           path: artifacts
       - name: List artifacts
-        run: find artifact
+        run: find artifacts
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v3

@@ -14,6 +14,12 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Cache cargo home
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo
+          key: ${{ runner.OS }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.OS }}-cargo-
       - name: Cache target directory
         uses: actions/cache@v2
         with:
@@ -44,6 +50,12 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Cache cargo home
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo
+          key: ${{ runner.OS }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.OS }}-cargo-
       - name: Cache target directory
         uses: actions/cache@v2
         with:

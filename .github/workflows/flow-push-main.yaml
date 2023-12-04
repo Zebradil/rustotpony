@@ -15,13 +15,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Cache cargo home
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cargo
           key: ${{ runner.OS }}-cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.OS }}-cargo-
       - name: Cache target directory
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: target
           key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}
@@ -51,13 +51,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Cache cargo home
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cargo
           key: ${{ runner.OS }}-cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.OS }}-cargo-
       - name: Cache target directory
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: target
           key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}

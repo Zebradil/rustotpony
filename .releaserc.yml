@@ -1,0 +1,18 @@
+---
+branches:
+  - master
+plugins:
+  - "@semantic-release/commit-analyzer"
+  - "@semantic-release/release-notes-generator"
+  - "@semantic-release/changelog"
+  - "@semantic-release/git"
+  - - "@semantic-release/github"
+    - assets:
+        - path: artifacts/ubuntu-latest/totp
+          name: totp-linux
+        - path: artifacts/macos-latest/totp
+          name: totp-macos
+        - path: artifacts/windows-latest/totp.exe
+          name: totp-windows.exe
+  - "semantic-release-cargo"
+tagFormat: "${version}"

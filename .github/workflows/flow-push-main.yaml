@@ -76,6 +76,8 @@ jobs:
           # The artifact is only needed for the current workflow run
           retention-days: 1
   release:
+    concurrency:
+      group: release
     needs:
       - build
     runs-on: ubuntu-latest

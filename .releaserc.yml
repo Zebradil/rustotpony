@@ -14,5 +14,5 @@ plugins:
           name: totp-macos
         - path: artifacts/windows-latest/totp.exe
           name: totp-windows.exe
-  - "semantic-release-cargo"
+  - "@semantic-release-cargo/semantic-release-cargo"
 tagFormat: "${version}"

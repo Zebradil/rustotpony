@@ -166,15 +166,15 @@ fn show_applications_list(_: bool) {
         applications_count += 1;
         output_table
             .entry("name")
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(application.get_name());
         output_table
             .entry("key")
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(application.get_secret());
         output_table
             .entry("username")
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(application.get_username());
     }
     let name_max_length = output_table["name"]

@@ -364,7 +364,7 @@ impl GenApp {
     }
 
     fn base32_to_bytes(secret: &str) -> Option<Vec<u8>> {
-        base32::decode(base32::Alphabet::RFC4648 { padding: false }, secret)
+        base32::decode(base32::Alphabet::Rfc4648 { padding: false }, secret)
     }
 
     fn totp(secret_bytes: &[u8]) -> String {

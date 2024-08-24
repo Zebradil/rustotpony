@@ -12,7 +12,7 @@ repository = "https://github.com/zebradil/rustotpony"
 version = "0.4.2"
 
 [dependencies]
-base32 = "0.4.0"
+base32 = "0.5.1"
 clap = { version = "^4.5.1", features = ["derive"] }
 keyring = "^2.3.2"
 totp-lite = "2.0.1"

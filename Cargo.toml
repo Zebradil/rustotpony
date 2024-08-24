@@ -14,7 +14,7 @@ version = "0.4.2"
 [dependencies]
 base32 = "0.5.1"
 clap = { version = "^4.5.1", features = ["derive"] }
-keyring = "^2.3.2"
+keyring = "^3.2.0"
 totp-lite = "2.0.1"
 rand = "^0.8.5"
 rpassword = "^7.3.1"

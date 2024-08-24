@@ -3,14 +3,14 @@ extern crate crypto;
 extern crate dirs;
 extern crate rand;
 extern crate serde_json;
+extern crate sha2;
 extern crate totp_lite;
 
 #[macro_use]
 extern crate serde_derive;
 
 use crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
+use sha2::{Sha256, Digest};
 use crypto::{aes, blockmodes, buffer, symmetriccipher};
 
 use totp_lite::{totp_custom, Sha1, DEFAULT_STEP};
@@ -148,11 +148,9 @@ impl JsonDatabase {
     }
 
     fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
-        let mut sha = Sha256::new();
-        sha.input_str(input);
-        let mut res: [u8; KEY_SIZE] = [0; KEY_SIZE];
-        sha.result(&mut res);
-        res
+        let mut hasher = Sha256::new();
+        hasher.update(input);
+        hasher.finalize().into()
     }
 
     fn read_database_file(&self) -> JsonDatabaseSchema {

@@ -466,6 +466,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "sha2",
  "totp-lite",
 ]
 

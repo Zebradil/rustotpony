@@ -167,7 +167,7 @@ impl JsonDatabase {
 
     fn decrypt_data(data: &[u8], key: &[u8]) -> String {
         let iv = &data[..IV_SIZE];
-        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
+        String::from_utf8(Self::decrypt_legacy(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
             .ok()
             .unwrap()
     }
@@ -269,7 +269,7 @@ impl JsonDatabase {
 
     // Decrypts a buffer with the given key and iv using
     // AES-256/CBC/Pkcs encryption.
-    fn decrypt(
+    fn decrypt_legacy(
         encrypted_data: &[u8],
         key: &[u8],
         iv: &[u8],

@@ -10,8 +10,8 @@ extern crate totp_lite;
 extern crate serde_derive;
 
 use crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
-use sha2::{Sha256, Digest};
 use crypto::{aes, blockmodes, buffer, symmetriccipher};
+use sha2::{Digest, Sha256};
 
 use totp_lite::{totp_custom, Sha1, DEFAULT_STEP};
 
@@ -122,7 +122,7 @@ impl Database for JsonDatabase {
 }
 
 #[derive(Serialize, Deserialize)]
-struct JsonDatabaseSchema {
+pub struct JsonDatabaseSchema {
     version: u8,
     content: DatabaseContentSchema,
 }
@@ -139,13 +139,11 @@ pub struct JsonDatabase {
 
 const IV_SIZE: usize = 16;
 const KEY_SIZE: usize = 32;
-impl JsonDatabase {
-    pub fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> JsonDatabase {
-        JsonDatabase {
-            file_path: path,
-            secret_fn,
-        }
-    }
+pub trait JsonDatabaseTrait {
+    fn get_file_path(&self) -> &PathBuf;
+    fn get_secret(&self) -> String;
+
+    fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> Self;
 
     fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
         let mut hasher = Sha256::new();
@@ -154,22 +152,24 @@ impl JsonDatabase {
     }
 
     fn read_database_file(&self) -> JsonDatabaseSchema {
-        let data = match std::fs::read(&self.file_path) {
+        let data = match std::fs::read(self.get_file_path()) {
             Ok(d) => d,
             Err(ref err) if err.kind() == ErrorKind::NotFound => return Self::get_empty_schema(),
             Err(err) => panic!("There was a problem opening file: {:?}", err),
         };
         let decrypted_data =
-            Self::decrypt_data(&data, &Self::form_secret_key((self.secret_fn)().as_str()));
+            Self::decrypt_data(&data, &Self::form_secret_key(self.get_secret().as_str()));
         serde_json::from_str(decrypted_data.as_str())
             .expect("Couldn't parse JSON from database file")
     }
 
     fn decrypt_data(data: &[u8], key: &[u8]) -> String {
         let iv = &data[..IV_SIZE];
-        String::from_utf8(Self::decrypt_legacy(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
-            .ok()
-            .unwrap()
+        String::from_utf8(
+            Self::decrypt_legacy(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"),
+        )
+        .ok()
+        .unwrap()
     }
 
     fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
@@ -196,7 +196,7 @@ impl JsonDatabase {
         };
         let data = serde_json::to_string(&content).expect("Couldn't serialize data to JSON");
         let encrypted_data =
-            Self::encrypt_data(&data, &Self::form_secret_key((self.secret_fn)().as_str()));
+            Self::encrypt_data(&data, &Self::form_secret_key(self.get_secret().as_str()));
         file.write_all(&encrypted_data)
             .expect("Couldn't write data to database file");
     }
@@ -302,7 +302,7 @@ impl JsonDatabase {
 
     fn create_database_file(&self) -> Result<File, std::io::Error> {
         let dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-        if let Some(parent_dir) = Path::new(&self.file_path).parent() {
+        if let Some(parent_dir) = Path::new(&self.get_file_path()).parent() {
             let dir = dir.join(parent_dir);
             create_dir_all(dir)?;
         }
@@ -314,7 +314,7 @@ impl JsonDatabase {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(&self.file_path)
+            .open(self.get_file_path())
     }
 
     fn get_empty_schema() -> JsonDatabaseSchema {
@@ -324,6 +324,23 @@ impl JsonDatabase {
                 applications: HashMap::new(),
             },
         }
+    }
+}
+
+impl JsonDatabaseTrait for JsonDatabase {
+    fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> JsonDatabase {
+        JsonDatabase {
+            file_path: path,
+            secret_fn,
+        }
+    }
+
+    fn get_file_path(&self) -> &PathBuf {
+        &self.file_path
+    }
+
+    fn get_secret(&self) -> String {
+        (self.secret_fn)()
     }
 }
 

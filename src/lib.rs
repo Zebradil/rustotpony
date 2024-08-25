@@ -108,18 +108,25 @@ pub trait Database {
     fn save_applications(&self, applications: &HashMap<String, GenApp>);
 }
 
-impl Database for JsonDatabase {
-    fn get_applications(&self) -> HashMap<String, GenApp> {
-        let db_content = self.read_database_file();
-        db_content.content.applications
-    }
+macro_rules! impl_database_trait {
+    ($type:ty) => {
+        impl Database for $type {
+            fn get_applications(&self) -> HashMap<String, GenApp> {
+                let db_content = self.read_database_file();
+                db_content.content.applications
+            }
 
-    fn save_applications(&self, applications: &HashMap<String, GenApp>) {
-        let mut db_content = Self::get_empty_schema();
-        db_content.content.applications = applications.clone();
-        self.save_database_file(db_content);
-    }
+            fn save_applications(&self, applications: &HashMap<String, GenApp>) {
+                let mut db_content = Self::get_empty_schema();
+                db_content.content.applications = applications.clone();
+                self.save_database_file(db_content);
+            }
+        }
+    };
 }
+
+impl_database_trait!(JsonDatabase);
+impl_database_trait!(JsonDatabase2);
 
 #[derive(Serialize, Deserialize)]
 pub struct JsonDatabaseSchema {
@@ -137,6 +144,11 @@ pub struct JsonDatabase {
     secret_fn: &'static dyn Fn() -> String,
 }
 
+pub struct JsonDatabase2 {
+    file_path: PathBuf,
+    secret_fn: &'static dyn Fn() -> String,
+}
+
 const IV_SIZE: usize = 16;
 const KEY_SIZE: usize = 32;
 pub trait JsonDatabaseTrait {
@@ -144,6 +156,10 @@ pub trait JsonDatabaseTrait {
     fn get_secret(&self) -> String;
 
     fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> Self;
+
+    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8>;
+
+    fn decrypt_data(data: &[u8], key: &[u8]) -> String;
 
     fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
         let mut hasher = Sha256::new();
@@ -161,22 +177,6 @@ pub trait JsonDatabaseTrait {
             Self::decrypt_data(&data, &Self::form_secret_key(self.get_secret().as_str()));
         serde_json::from_str(decrypted_data.as_str())
             .expect("Couldn't parse JSON from database file")
-    }
-
-    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
-        let iv = &data[..IV_SIZE];
-        String::from_utf8(
-            Self::decrypt_legacy(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"),
-        )
-        .ok()
-        .unwrap()
-    }
-
-    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
-        let iv = Self::create_iv();
-        let encrypted_data =
-            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
-        [&iv, &encrypted_data[..]].concat()
     }
 
     fn create_iv() -> Vec<u8> {
@@ -199,6 +199,80 @@ pub trait JsonDatabaseTrait {
             Self::encrypt_data(&data, &Self::form_secret_key(self.get_secret().as_str()));
         file.write_all(&encrypted_data)
             .expect("Couldn't write data to database file");
+    }
+
+    fn create_database_file(&self) -> Result<File, std::io::Error> {
+        let dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        if let Some(parent_dir) = Path::new(&self.get_file_path()).parent() {
+            let dir = dir.join(parent_dir);
+            create_dir_all(dir)?;
+        }
+        self.open_database_file_for_write()
+    }
+
+    fn open_database_file_for_write(&self) -> Result<File, std::io::Error> {
+        OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(self.get_file_path())
+    }
+
+    fn get_empty_schema() -> JsonDatabaseSchema {
+        JsonDatabaseSchema {
+            version: DATABASE_VERSION,
+            content: DatabaseContentSchema {
+                applications: HashMap::new(),
+            },
+        }
+    }
+}
+
+macro_rules! impl_json_database_trait {
+    ($type:ty) => {
+        impl JsonDatabaseTrait for $type {
+            fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> Self {
+                Self {
+                    file_path: path,
+                    secret_fn,
+                }
+            }
+
+            fn get_file_path(&self) -> &PathBuf {
+                &self.file_path
+            }
+
+            fn get_secret(&self) -> String {
+                (self.secret_fn)()
+            }
+
+            fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
+                <$type>::encrypt_data(data, key)
+            }
+
+            fn decrypt_data(data: &[u8], key: &[u8]) -> String {
+                <$type>::decrypt_data(data, key)
+            }
+        }
+    };
+}
+
+impl_json_database_trait!(JsonDatabase);
+impl_json_database_trait!(JsonDatabase2);
+
+impl JsonDatabase {
+    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
+        let iv = Self::create_iv();
+        let encrypted_data =
+            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
+        [&iv, &encrypted_data[..]].concat()
+    }
+
+    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
+        let iv = &data[..IV_SIZE];
+        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
+            .ok()
+            .unwrap()
     }
 
     // Encrypt a buffer with the given key and iv using
@@ -269,7 +343,7 @@ pub trait JsonDatabaseTrait {
 
     // Decrypts a buffer with the given key and iv using
     // AES-256/CBC/Pkcs encryption.
-    fn decrypt_legacy(
+    fn decrypt(
         encrypted_data: &[u8],
         key: &[u8],
         iv: &[u8],
@@ -299,48 +373,85 @@ pub trait JsonDatabaseTrait {
 
         Ok(final_result)
     }
-
-    fn create_database_file(&self) -> Result<File, std::io::Error> {
-        let dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-        if let Some(parent_dir) = Path::new(&self.get_file_path()).parent() {
-            let dir = dir.join(parent_dir);
-            create_dir_all(dir)?;
-        }
-        self.open_database_file_for_write()
-    }
-
-    fn open_database_file_for_write(&self) -> Result<File, std::io::Error> {
-        OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(self.get_file_path())
-    }
-
-    fn get_empty_schema() -> JsonDatabaseSchema {
-        JsonDatabaseSchema {
-            version: DATABASE_VERSION,
-            content: DatabaseContentSchema {
-                applications: HashMap::new(),
-            },
-        }
-    }
 }
 
-impl JsonDatabaseTrait for JsonDatabase {
-    fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> JsonDatabase {
-        JsonDatabase {
-            file_path: path,
-            secret_fn,
+impl JsonDatabase2 {
+    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
+        let iv = Self::create_iv();
+        let encrypted_data =
+            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
+        [&iv, &encrypted_data[..]].concat()
+    }
+
+    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
+        let iv = &data[..IV_SIZE];
+        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
+            .ok()
+            .unwrap()
+    }
+
+    fn encrypt(
+        data: &[u8],
+        key: &[u8],
+        iv: &[u8],
+    ) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
+        let mut encryptor =
+            aes::cbc_encryptor(aes::KeySize::KeySize256, key, iv, blockmodes::PkcsPadding);
+
+        let mut final_result = Vec::<u8>::new();
+        let mut read_buffer = buffer::RefReadBuffer::new(data);
+        let mut buffer = [0; 4096];
+        let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
+
+        loop {
+            let result = encryptor.encrypt(&mut read_buffer, &mut write_buffer, true)?;
+
+            final_result.extend(
+                write_buffer
+                    .take_read_buffer()
+                    .take_remaining()
+                    .iter()
+                    .copied(),
+            );
+
+            match result {
+                BufferResult::BufferUnderflow => break,
+                BufferResult::BufferOverflow => {}
+            }
         }
+
+        Ok(final_result)
     }
 
-    fn get_file_path(&self) -> &PathBuf {
-        &self.file_path
-    }
+    fn decrypt(
+        encrypted_data: &[u8],
+        key: &[u8],
+        iv: &[u8],
+    ) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
+        let mut decryptor =
+            aes::cbc_decryptor(aes::KeySize::KeySize256, key, iv, blockmodes::PkcsPadding);
 
-    fn get_secret(&self) -> String {
-        (self.secret_fn)()
+        let mut final_result = Vec::<u8>::new();
+        let mut read_buffer = buffer::RefReadBuffer::new(encrypted_data);
+        let mut buffer = [0; 4096];
+        let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
+
+        loop {
+            let result = decryptor.decrypt(&mut read_buffer, &mut write_buffer, true)?;
+            final_result.extend(
+                write_buffer
+                    .take_read_buffer()
+                    .take_remaining()
+                    .iter()
+                    .copied(),
+            );
+            match result {
+                BufferResult::BufferUnderflow => break,
+                BufferResult::BufferOverflow => {}
+            }
+        }
+
+        Ok(final_result)
     }
 }
 

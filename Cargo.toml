@@ -12,6 +12,7 @@ repository = "https://github.com/zebradil/rustotpony"
 version = "0.4.2"
 
 [dependencies]
+age = "0.10.0"
 base32 = "0.5.1"
 clap = { version = "^4.5.16", features = ["derive"] }
 dirs = "^5.0.1"

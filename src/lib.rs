@@ -1,3 +1,4 @@
+extern crate age;
 extern crate base32;
 extern crate crypto;
 extern crate dirs;
@@ -20,7 +21,7 @@ use rand::prelude::*;
 use std::collections::HashMap;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::ErrorKind;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -126,7 +127,7 @@ macro_rules! impl_database_trait {
 }
 
 impl_database_trait!(JsonDatabase);
-impl_database_trait!(JsonDatabase2);
+impl_database_trait!(AgeJsonDatabase);
 
 #[derive(Serialize, Deserialize)]
 pub struct JsonDatabaseSchema {
@@ -144,7 +145,7 @@ pub struct JsonDatabase {
     secret_fn: &'static dyn Fn() -> String,
 }
 
-pub struct JsonDatabase2 {
+pub struct AgeJsonDatabase {
     file_path: PathBuf,
     secret_fn: &'static dyn Fn() -> String,
 }
@@ -157,15 +158,9 @@ pub trait JsonDatabaseTrait {
 
     fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> Self;
 
-    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8>;
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8>;
 
-    fn decrypt_data(data: &[u8], key: &[u8]) -> String;
-
-    fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
-        let mut hasher = Sha256::new();
-        hasher.update(input);
-        hasher.finalize().into()
-    }
+    fn decrypt_data(data: &[u8], key: &str) -> String;
 
     fn read_database_file(&self) -> JsonDatabaseSchema {
         let data = match std::fs::read(self.get_file_path()) {
@@ -173,8 +168,7 @@ pub trait JsonDatabaseTrait {
             Err(ref err) if err.kind() == ErrorKind::NotFound => return Self::get_empty_schema(),
             Err(err) => panic!("There was a problem opening file: {:?}", err),
         };
-        let decrypted_data =
-            Self::decrypt_data(&data, &Self::form_secret_key(self.get_secret().as_str()));
+        let decrypted_data = Self::decrypt_data(&data, self.get_secret().as_str());
         serde_json::from_str(decrypted_data.as_str())
             .expect("Couldn't parse JSON from database file")
     }
@@ -195,8 +189,7 @@ pub trait JsonDatabaseTrait {
             Err(err) => panic!("Couldn't open database file: {:?}", err),
         };
         let data = serde_json::to_string(&content).expect("Couldn't serialize data to JSON");
-        let encrypted_data =
-            Self::encrypt_data(&data, &Self::form_secret_key(self.get_secret().as_str()));
+        let encrypted_data = Self::encrypt_data(&data, self.get_secret().as_str());
         file.write_all(&encrypted_data)
             .expect("Couldn't write data to database file");
     }
@@ -246,11 +239,11 @@ macro_rules! impl_json_database_trait {
                 (self.secret_fn)()
             }
 
-            fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
+            fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
                 <$type>::encrypt_data(data, key)
             }
 
-            fn decrypt_data(data: &[u8], key: &[u8]) -> String {
+            fn decrypt_data(data: &[u8], key: &str) -> String {
                 <$type>::decrypt_data(data, key)
             }
         }
@@ -258,19 +251,27 @@ macro_rules! impl_json_database_trait {
 }
 
 impl_json_database_trait!(JsonDatabase);
-impl_json_database_trait!(JsonDatabase2);
+impl_json_database_trait!(AgeJsonDatabase);
 
 impl JsonDatabase {
-    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
+    fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
+        let mut hasher = Sha256::new();
+        hasher.update(input);
+        hasher.finalize().into()
+    }
+
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
+        let key = Self::form_secret_key(key);
         let iv = Self::create_iv();
         let encrypted_data =
-            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
+            Self::encrypt(data.as_bytes(), &key, &iv).expect("Couldn't encrypt data");
         [&iv, &encrypted_data[..]].concat()
     }
 
-    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
+    fn decrypt_data(data: &[u8], key: &str) -> String {
+        let key = Self::form_secret_key(key);
         let iv = &data[..IV_SIZE];
-        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
+        String::from_utf8(Self::decrypt(&data[IV_SIZE..], &key, iv).expect("Couldn't decrypt data"))
             .ok()
             .unwrap()
     }
@@ -375,83 +376,32 @@ impl JsonDatabase {
     }
 }
 
-impl JsonDatabase2 {
-    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
-        let iv = Self::create_iv();
-        let encrypted_data =
-            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
-        [&iv, &encrypted_data[..]].concat()
+impl AgeJsonDatabase {
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
+        let encryptor =
+            age::Encryptor::with_user_passphrase(age::secrecy::Secret::new(key.to_owned()));
+
+        let mut encrypted = vec![];
+        let mut writer = encryptor.wrap_output(&mut encrypted).unwrap();
+        writer.write_all(data.as_bytes()).unwrap();
+        writer.finish().unwrap();
+
+        encrypted
     }
 
-    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
-        let iv = &data[..IV_SIZE];
-        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
-            .ok()
-            .unwrap()
-    }
+    fn decrypt_data(data: &[u8], key: &str) -> String {
+        let decryptor = match age::Decryptor::new(data).unwrap() {
+            age::Decryptor::Passphrase(d) => d,
+            _ => unreachable!(),
+        };
 
-    fn encrypt(
-        data: &[u8],
-        key: &[u8],
-        iv: &[u8],
-    ) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
-        let mut encryptor =
-            aes::cbc_encryptor(aes::KeySize::KeySize256, key, iv, blockmodes::PkcsPadding);
+        let mut decrypted = vec![];
+        let mut reader = decryptor
+            .decrypt(&age::secrecy::Secret::new(key.to_owned()), None)
+            .unwrap();
+        reader.read_to_end(&mut decrypted).unwrap();
 
-        let mut final_result = Vec::<u8>::new();
-        let mut read_buffer = buffer::RefReadBuffer::new(data);
-        let mut buffer = [0; 4096];
-        let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
-
-        loop {
-            let result = encryptor.encrypt(&mut read_buffer, &mut write_buffer, true)?;
-
-            final_result.extend(
-                write_buffer
-                    .take_read_buffer()
-                    .take_remaining()
-                    .iter()
-                    .copied(),
-            );
-
-            match result {
-                BufferResult::BufferUnderflow => break,
-                BufferResult::BufferOverflow => {}
-            }
-        }
-
-        Ok(final_result)
-    }
-
-    fn decrypt(
-        encrypted_data: &[u8],
-        key: &[u8],
-        iv: &[u8],
-    ) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
-        let mut decryptor =
-            aes::cbc_decryptor(aes::KeySize::KeySize256, key, iv, blockmodes::PkcsPadding);
-
-        let mut final_result = Vec::<u8>::new();
-        let mut read_buffer = buffer::RefReadBuffer::new(encrypted_data);
-        let mut buffer = [0; 4096];
-        let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
-
-        loop {
-            let result = decryptor.decrypt(&mut read_buffer, &mut write_buffer, true)?;
-            final_result.extend(
-                write_buffer
-                    .take_read_buffer()
-                    .take_remaining()
-                    .iter()
-                    .copied(),
-            );
-            match result {
-                BufferResult::BufferUnderflow => break,
-                BufferResult::BufferOverflow => {}
-            }
-        }
-
-        Ok(final_result)
+        String::from_utf8(decrypted).unwrap()
     }
 }
 

@@ -11,8 +11,6 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-const CONFIG_PATH: &str = ".rustotpony/db.json";
-
 #[derive(Parser)]
 #[command(name = "🐴 RusTOTPony")]
 #[command(author, about, version, long_about = None)]
@@ -93,17 +91,31 @@ fn main() {
 }
 
 fn app() -> RusTOTPony<JsonDatabase> {
-    let db = JsonDatabase::new(get_database_path(), &get_secret);
-    RusTOTPony::new(db)
+    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let old_path = home.join(Path::new(".rustotpony/db.json"));
+    let new_path = home.join(Path::new(".rustotpony/totp.safe"));
+    let new_db = JsonDatabase::new(new_path.clone(), &get_secret);
+    // If old database exists, migrate it to the new format
+    // and notify the user about the change
+    if old_path.exists() {
+        // If the new database already exists, abort the migration and notify the user
+        if new_path.exists() {
+            println!("Both old and new databases found, using the new one…");
+            println!("Please remove the old database at: {}", old_path.display());
+            return RusTOTPony::new(JsonDatabase::new(new_path, &get_secret));
+        }
+        println!("Migrating old database to the new format…");
+        let old_db = JsonDatabase::new(old_path.clone(), &get_secret);
+        let apps = old_db.get_applications();
+        new_db.save_applications(&apps);
+        println!("Old database migrated successfully to the new format.");
+        println!("Please remove the old database at: {}", old_path.display());
+    }
+    RusTOTPony::new(new_db)
 }
 
 fn get_secret() -> String {
     rpassword::prompt_password("Enter your database pass: ").unwrap()
-}
-
-fn get_database_path() -> PathBuf {
-    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    home.join(Path::new(CONFIG_PATH))
 }
 
 fn show_dashboard() {

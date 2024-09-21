@@ -1,5 +1,7 @@
-# Cache password ?
-# Update README
-# Implement secret retrieval from OS's keyring
-# Decompose lib into modules
-# Implement tests
+1. Cache password
+2. Obey XDG config dir
+3. Ask confirmation before migrating to the new database format
+
+- Implement secret retrieval from OS's keyring
+- Decompose lib into modules
+- Implement tests

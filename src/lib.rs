@@ -142,12 +142,12 @@ struct DatabaseContentSchema {
 
 pub struct JsonDatabase {
     file_path: PathBuf,
-    secret_fn: &'static dyn Fn() -> String,
+    secret: String,
 }
 
 pub struct AgeJsonDatabase {
     file_path: PathBuf,
-    secret_fn: &'static dyn Fn() -> String,
+    secret: String,
 }
 
 const IV_SIZE: usize = 16;
@@ -156,7 +156,7 @@ pub trait JsonDatabaseTrait {
     fn get_file_path(&self) -> &PathBuf;
     fn get_secret(&self) -> String;
 
-    fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> Self;
+    fn new(path: PathBuf, secret: String) -> Self;
 
     fn encrypt_data(data: &str, key: &str) -> Vec<u8>;
 
@@ -224,10 +224,10 @@ pub trait JsonDatabaseTrait {
 macro_rules! impl_json_database_trait {
     ($type:ty) => {
         impl JsonDatabaseTrait for $type {
-            fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> Self {
+            fn new(path: PathBuf, secret: String) -> Self {
                 Self {
                     file_path: path,
-                    secret_fn,
+                    secret,
                 }
             }
 
@@ -236,7 +236,7 @@ macro_rules! impl_json_database_trait {
             }
 
             fn get_secret(&self) -> String {
-                (self.secret_fn)()
+                self.secret.clone()
             }
 
             fn encrypt_data(data: &str, key: &str) -> Vec<u8> {

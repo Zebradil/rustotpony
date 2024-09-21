@@ -95,7 +95,8 @@ fn app() -> RusTOTPony<JsonDatabase> {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
     let old_path = home.join(Path::new(".rustotpony/db.json"));
     let new_path = home.join(Path::new(".rustotpony/totp.safe"));
-    let new_db = JsonDatabase::new(new_path.clone(), &get_secret);
+    let secret = get_secret();
+    let new_db = JsonDatabase::new(new_path.clone(), secret.clone());
     // If old database exists, migrate it to the new format
     // and notify the user about the change
     if old_path.exists() {
@@ -103,19 +104,18 @@ fn app() -> RusTOTPony<JsonDatabase> {
         if new_path.exists() {
             println!("Both old and new databases found, using the new one…");
             println!("Please remove the old database at: {}", old_path.display());
-            return RusTOTPony::new(JsonDatabase::new(new_path, &get_secret));
+            return RusTOTPony::new(new_db);
         }
+        println!();
         println!("IMPORTANT:");
         println!("    RusTOTPony has changed the database format.");
-        println!("    The old database at");
-        println!("      {}", old_path.display());
-        println!("    will be migrated to the new format at");
-        println!("      {}", new_path.display());
-        println!("    The old database will be kept as a backup.");
-        println!("    To prevent this, close the application with ^C");
-        println!("    and rollback to an earlier version (0.4.2).");
+        println!("    The old database will be migrated to the new format and kept as a backup.");
+        println!("      old: {}", old_path.display());
+        println!("      new: {}", new_path.display());
+        println!("    If this is not what you want, you can rollback to the old version (0.4.2) and remove the new database.");
+        println!();
         println!("Migrating old database to the new format…");
-        let old_db = JsonDatabase::new(old_path.clone(), &get_secret);
+        let old_db = JsonDatabase::new(old_path.clone(), secret);
         let apps = old_db.get_applications();
         new_db.save_applications(&apps);
         println!("Old database migrated successfully to the new format.");

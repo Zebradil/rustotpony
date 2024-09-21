@@ -1,10 +1,11 @@
 extern crate clap;
 extern crate ctrlc;
 extern crate dirs;
-extern crate rpassword;
+extern crate promkit;
 extern crate rustotpony;
 
 use clap::{Parser, Subcommand};
+use promkit::preset::password::Password;
 use rustotpony::*;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -115,7 +116,11 @@ fn app() -> RusTOTPony<JsonDatabase> {
 }
 
 fn get_secret() -> String {
-    rpassword::prompt_password("Enter your database pass: ").unwrap()
+    let mut p = Password::default()
+        .title("Enter your database password")
+        .prompt()
+        .unwrap();
+    p.run().unwrap()
 }
 
 fn show_dashboard() {
@@ -235,7 +240,11 @@ fn show_applications_list(_: bool) {
 }
 
 fn create_application(name: &str, username: &str) {
-    let secret = rpassword::prompt_password("Enter your secret code: ").unwrap();
+    let mut p = Password::default()
+        .title("Enter your secret code")
+        .prompt()
+        .unwrap();
+    let secret = p.run().unwrap();
     let mut app = app();
     match app.create_application(name, username, &secret) {
         Ok(_) => {

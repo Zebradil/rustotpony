@@ -105,6 +105,15 @@ fn app() -> RusTOTPony<JsonDatabase> {
             println!("Please remove the old database at: {}", old_path.display());
             return RusTOTPony::new(JsonDatabase::new(new_path, &get_secret));
         }
+        println!("IMPORTANT:");
+        println!("    RusTOTPony has changed the database format.");
+        println!("    The old database at");
+        println!("      {}", old_path.display());
+        println!("    will be migrated to the new format at");
+        println!("      {}", new_path.display());
+        println!("    The old database will be kept as a backup.");
+        println!("    To prevent this, close the application with ^C");
+        println!("    and rollback to an earlier version (0.4.2).");
         println!("Migrating old database to the new format…");
         let old_db = JsonDatabase::new(old_path.clone(), &get_secret);
         let apps = old_db.get_applications();

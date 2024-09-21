@@ -1,5 +1,4 @@
-1. Cache password
-2. Obey XDG config dir
+1. Obey XDG config dir
 
 - Implement secret retrieval from OS's keyring
 - Decompose lib into modules

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# If Github Action is running with debug enabled, print all commands
+# Otherwise, silence standard output
+if [[ "${RUNNER_DEBUG:-}" == "1" ]]; then
+    set -x
+else
+    exec 1>/dev/null
+fi
+
+# Replace version in Cargo.toml
+# If the pattern is not found, exit with code 128
+# If the version is not set, exit with code 1
+# shellcheck disable=SC2016
+sed -i -r '/(version\s+=\s+")[^"]+("\s+#\s+SED-HERE.*)/,${s//\1'"${1:?Set version}"'\2/;b};$q128' Cargo.toml

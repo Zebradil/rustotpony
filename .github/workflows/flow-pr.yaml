@@ -1,8 +1,8 @@
 ---
-name: Push to master
+name: Push to PR
 
 on:
-  push:
+  pull_request:
     branches:
       - master
 
@@ -67,51 +67,3 @@ jobs:
             ${{ runner.OS }}-target-
       - name: Cargo build release
         run: cargo build --verbose --release
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}
-          path: ${{ matrix.bin_path }}
-          if-no-files-found: error
-          # The artifact is only needed for the current workflow run
-          retention-days: 1
-  release:
-    concurrency:
-      group: release
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.ZEBRADIL_BOT_GPG_PRIVATE_KEY }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-      - name: List artifacts
-        run: find artifacts
-      - name: Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v3
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.ZEBRADIL_BOT_GITHUB_TOKEN }}
-          GIT_AUTHOR_NAME: Zebradli Bot
-          GIT_AUTHOR_EMAIL: german.lashevich+github-zebradil-bot@gmail.com
-          GIT_COMMITTER_NAME: Zebradli Bot
-          GIT_COMMITTER_EMAIL: german.lashevich+github-zebradil-bot@gmail.com
-        with:
-          extra_plugins: |
-            @semantic-release/git
-            @semantic-release-cargo/semantic-release-cargo

@@ -1,17 +1,18 @@
+extern crate age;
 extern crate base32;
 extern crate crypto;
 extern crate dirs;
 extern crate rand;
 extern crate serde_json;
+extern crate sha2;
 extern crate totp_lite;
 
 #[macro_use]
 extern crate serde_derive;
 
 use crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 use crypto::{aes, blockmodes, buffer, symmetriccipher};
+use sha2::{Digest, Sha256};
 
 use totp_lite::{totp_custom, Sha1, DEFAULT_STEP};
 
@@ -20,7 +21,7 @@ use rand::prelude::*;
 use std::collections::HashMap;
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::ErrorKind;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -108,21 +109,28 @@ pub trait Database {
     fn save_applications(&self, applications: &HashMap<String, GenApp>);
 }
 
-impl Database for JsonDatabase {
-    fn get_applications(&self) -> HashMap<String, GenApp> {
-        let db_content = self.read_database_file();
-        db_content.content.applications
-    }
+macro_rules! impl_database_trait {
+    ($type:ty) => {
+        impl Database for $type {
+            fn get_applications(&self) -> HashMap<String, GenApp> {
+                let db_content = self.read_database_file();
+                db_content.content.applications
+            }
 
-    fn save_applications(&self, applications: &HashMap<String, GenApp>) {
-        let mut db_content = Self::get_empty_schema();
-        db_content.content.applications = applications.clone();
-        self.save_database_file(db_content);
-    }
+            fn save_applications(&self, applications: &HashMap<String, GenApp>) {
+                let mut db_content = Self::get_empty_schema();
+                db_content.content.applications = applications.clone();
+                self.save_database_file(db_content);
+            }
+        }
+    };
 }
 
+impl_database_trait!(JsonDatabase);
+impl_database_trait!(AgeJsonDatabase);
+
 #[derive(Serialize, Deserialize)]
-struct JsonDatabaseSchema {
+pub struct JsonDatabaseSchema {
     version: u8,
     content: DatabaseContentSchema,
 }
@@ -134,51 +142,35 @@ struct DatabaseContentSchema {
 
 pub struct JsonDatabase {
     file_path: PathBuf,
-    secret_fn: &'static dyn Fn() -> String,
+    secret: String,
+}
+
+pub struct AgeJsonDatabase {
+    file_path: PathBuf,
+    secret: String,
 }
 
 const IV_SIZE: usize = 16;
 const KEY_SIZE: usize = 32;
-impl JsonDatabase {
-    pub fn new(path: PathBuf, secret_fn: &'static dyn Fn() -> String) -> JsonDatabase {
-        JsonDatabase {
-            file_path: path,
-            secret_fn,
-        }
-    }
+pub trait JsonDatabaseTrait {
+    fn get_file_path(&self) -> &PathBuf;
+    fn get_secret(&self) -> String;
 
-    fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
-        let mut sha = Sha256::new();
-        sha.input_str(input);
-        let mut res: [u8; KEY_SIZE] = [0; KEY_SIZE];
-        sha.result(&mut res);
-        res
-    }
+    fn new(path: PathBuf, secret: String) -> Self;
+
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8>;
+
+    fn decrypt_data(data: &[u8], key: &str) -> String;
 
     fn read_database_file(&self) -> JsonDatabaseSchema {
-        let data = match std::fs::read(&self.file_path) {
+        let data = match std::fs::read(self.get_file_path()) {
             Ok(d) => d,
             Err(ref err) if err.kind() == ErrorKind::NotFound => return Self::get_empty_schema(),
             Err(err) => panic!("There was a problem opening file: {:?}", err),
         };
-        let decrypted_data =
-            Self::decrypt_data(&data, &Self::form_secret_key((self.secret_fn)().as_str()));
+        let decrypted_data = Self::decrypt_data(&data, self.get_secret().as_str());
         serde_json::from_str(decrypted_data.as_str())
             .expect("Couldn't parse JSON from database file")
-    }
-
-    fn decrypt_data(data: &[u8], key: &[u8]) -> String {
-        let iv = &data[..IV_SIZE];
-        String::from_utf8(Self::decrypt(&data[IV_SIZE..], key, iv).expect("Couldn't decrypt data"))
-            .ok()
-            .unwrap()
-    }
-
-    fn encrypt_data(data: &str, key: &[u8]) -> Vec<u8> {
-        let iv = Self::create_iv();
-        let encrypted_data =
-            Self::encrypt(data.as_bytes(), key, &iv).expect("Couldn't encrypt data");
-        [&iv, &encrypted_data[..]].concat()
     }
 
     fn create_iv() -> Vec<u8> {
@@ -197,10 +189,91 @@ impl JsonDatabase {
             Err(err) => panic!("Couldn't open database file: {:?}", err),
         };
         let data = serde_json::to_string(&content).expect("Couldn't serialize data to JSON");
-        let encrypted_data =
-            Self::encrypt_data(&data, &Self::form_secret_key((self.secret_fn)().as_str()));
+        let encrypted_data = Self::encrypt_data(&data, self.get_secret().as_str());
         file.write_all(&encrypted_data)
             .expect("Couldn't write data to database file");
+    }
+
+    fn create_database_file(&self) -> Result<File, std::io::Error> {
+        let dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        if let Some(parent_dir) = Path::new(&self.get_file_path()).parent() {
+            let dir = dir.join(parent_dir);
+            create_dir_all(dir)?;
+        }
+        self.open_database_file_for_write()
+    }
+
+    fn open_database_file_for_write(&self) -> Result<File, std::io::Error> {
+        OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(self.get_file_path())
+    }
+
+    fn get_empty_schema() -> JsonDatabaseSchema {
+        JsonDatabaseSchema {
+            version: DATABASE_VERSION,
+            content: DatabaseContentSchema {
+                applications: HashMap::new(),
+            },
+        }
+    }
+}
+
+macro_rules! impl_json_database_trait {
+    ($type:ty) => {
+        impl JsonDatabaseTrait for $type {
+            fn new(path: PathBuf, secret: String) -> Self {
+                Self {
+                    file_path: path,
+                    secret,
+                }
+            }
+
+            fn get_file_path(&self) -> &PathBuf {
+                &self.file_path
+            }
+
+            fn get_secret(&self) -> String {
+                self.secret.clone()
+            }
+
+            fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
+                <$type>::encrypt_data(data, key)
+            }
+
+            fn decrypt_data(data: &[u8], key: &str) -> String {
+                <$type>::decrypt_data(data, key)
+            }
+        }
+    };
+}
+
+impl_json_database_trait!(JsonDatabase);
+impl_json_database_trait!(AgeJsonDatabase);
+
+impl JsonDatabase {
+    fn form_secret_key(input: &str) -> [u8; KEY_SIZE] {
+        let mut hasher = Sha256::new();
+        hasher.update(input);
+        hasher.finalize().into()
+    }
+
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
+        let key = Self::form_secret_key(key);
+        let iv = Self::create_iv();
+        let encrypted_data =
+            Self::encrypt(data.as_bytes(), &key, &iv).expect("Couldn't encrypt data");
+        [&iv, &encrypted_data[..]].concat()
+    }
+
+    fn decrypt_data(data: &[u8], key: &str) -> String {
+        let key = Self::form_secret_key(key);
+        let iv = &data[..IV_SIZE];
+        String::from_utf8(Self::decrypt(&data[IV_SIZE..], &key, iv).expect("Couldn't decrypt data"))
+            .ok()
+            .unwrap()
     }
 
     // Encrypt a buffer with the given key and iv using
@@ -301,31 +374,34 @@ impl JsonDatabase {
 
         Ok(final_result)
     }
+}
 
-    fn create_database_file(&self) -> Result<File, std::io::Error> {
-        let dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-        if let Some(parent_dir) = Path::new(&self.file_path).parent() {
-            let dir = dir.join(parent_dir);
-            create_dir_all(dir)?;
-        }
-        self.open_database_file_for_write()
+impl AgeJsonDatabase {
+    fn encrypt_data(data: &str, key: &str) -> Vec<u8> {
+        let encryptor =
+            age::Encryptor::with_user_passphrase(age::secrecy::Secret::new(key.to_owned()));
+
+        let mut encrypted = vec![];
+        let mut writer = encryptor.wrap_output(&mut encrypted).unwrap();
+        writer.write_all(data.as_bytes()).unwrap();
+        writer.finish().unwrap();
+
+        encrypted
     }
 
-    fn open_database_file_for_write(&self) -> Result<File, std::io::Error> {
-        OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(&self.file_path)
-    }
+    fn decrypt_data(data: &[u8], key: &str) -> String {
+        let decryptor = match age::Decryptor::new(data).unwrap() {
+            age::Decryptor::Passphrase(d) => d,
+            _ => unreachable!(),
+        };
 
-    fn get_empty_schema() -> JsonDatabaseSchema {
-        JsonDatabaseSchema {
-            version: DATABASE_VERSION,
-            content: DatabaseContentSchema {
-                applications: HashMap::new(),
-            },
-        }
+        let mut decrypted = vec![];
+        let mut reader = decryptor
+            .decrypt(&age::secrecy::Secret::new(key.to_owned()), None)
+            .unwrap();
+        reader.read_to_end(&mut decrypted).unwrap();
+
+        String::from_utf8(decrypted).unwrap()
     }
 }
 
@@ -364,7 +440,7 @@ impl GenApp {
     }
 
     fn base32_to_bytes(secret: &str) -> Option<Vec<u8>> {
-        base32::decode(base32::Alphabet::RFC4648 { padding: false }, secret)
+        base32::decode(base32::Alphabet::Rfc4648 { padding: false }, secret)
     }
 
     fn totp(secret_bytes: &[u8]) -> String {

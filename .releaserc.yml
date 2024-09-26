@@ -3,6 +3,8 @@ branches:
   - master
 plugins:
   - "@semantic-release/commit-analyzer"
+  - - "@semantic-release/exec"
+    - prepareCmd: .github/scripts/update-cargo-version ${nextRelease.version}
   - "@semantic-release/release-notes-generator"
   - "@semantic-release/changelog"
   - "@semantic-release/git"

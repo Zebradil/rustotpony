@@ -1,17 +1,16 @@
 extern crate clap;
 extern crate ctrlc;
 extern crate dirs;
-extern crate rpassword;
+extern crate promkit;
 extern crate rustotpony;
 
 use clap::{Parser, Subcommand};
+use promkit::preset::password::Password;
 use rustotpony::*;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-const CONFIG_PATH: &str = ".rustotpony/db.json";
 
 #[derive(Parser)]
 #[command(name = "🐴 RusTOTPony")]
@@ -93,17 +92,44 @@ fn main() {
 }
 
 fn app() -> RusTOTPony<JsonDatabase> {
-    let db = JsonDatabase::new(get_database_path(), &get_secret);
-    RusTOTPony::new(db)
+    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let old_path = home.join(Path::new(".rustotpony/db.json"));
+    let new_path = home.join(Path::new(".rustotpony/totp.safe"));
+    let secret = get_secret();
+    let new_db = JsonDatabase::new(new_path.clone(), secret.clone());
+    // If old database exists, migrate it to the new format
+    // and notify the user about the change
+    if old_path.exists() {
+        // If the new database already exists, abort the migration and notify the user
+        if new_path.exists() {
+            println!("Both old and new databases found, using the new one…");
+            println!("Please remove the old database at: {}", old_path.display());
+            return RusTOTPony::new(new_db);
+        }
+        println!();
+        println!("IMPORTANT:");
+        println!("    RusTOTPony has changed the database format.");
+        println!("    The old database will be migrated to the new format and kept as a backup.");
+        println!("      old: {}", old_path.display());
+        println!("      new: {}", new_path.display());
+        println!("    If this is not what you want, you can rollback to the old version (0.4.2) and remove the new database.");
+        println!();
+        println!("Migrating old database to the new format…");
+        let old_db = JsonDatabase::new(old_path.clone(), secret);
+        let apps = old_db.get_applications();
+        new_db.save_applications(&apps);
+        println!("Old database migrated successfully to the new format.");
+        println!("Please remove the old database at: {}", old_path.display());
+    }
+    RusTOTPony::new(new_db)
 }
 
 fn get_secret() -> String {
-    rpassword::prompt_password("Enter your database pass: ").unwrap()
-}
-
-fn get_database_path() -> PathBuf {
-    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    home.join(Path::new(CONFIG_PATH))
+    let mut p = Password::default()
+        .title("Enter your database password")
+        .prompt()
+        .unwrap();
+    p.run().unwrap()
 }
 
 fn show_dashboard() {
@@ -166,15 +192,15 @@ fn show_applications_list(_: bool) {
         applications_count += 1;
         output_table
             .entry("name")
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(application.get_name());
         output_table
             .entry("key")
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(application.get_secret());
         output_table
             .entry("username")
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(application.get_username());
     }
     let name_max_length = output_table["name"]
@@ -223,7 +249,11 @@ fn show_applications_list(_: bool) {
 }
 
 fn create_application(name: &str, username: &str) {
-    let secret = rpassword::prompt_password("Enter your secret code: ").unwrap();
+    let mut p = Password::default()
+        .title("Enter your secret code")
+        .prompt()
+        .unwrap();
+    let secret = p.run().unwrap();
     let mut app = app();
     match app.create_application(name, username, &secret) {
         Ok(_) => {

@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/Zebradil/rustotpony/compare/0.5.1...0.5.2) (2024-09-26)
+
+
+### Bug Fixes
+
+* **deps:** update all dependencies ([#66](https://github.com/Zebradil/rustotpony/issues/66)) ([9464126](https://github.com/Zebradil/rustotpony/commit/9464126d1f34ae44d3c433b44ac1340f2c4c81a7))
+
 ## [0.5.1](https://github.com/Zebradil/rustotpony/compare/0.5.0...0.5.1) (2024-09-26)
 
 

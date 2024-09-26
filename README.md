@@ -18,7 +18,7 @@ Packages, available in [AUR](https://aur.archlinux.org/):
 ### Other
 
 Grab an appropriate binary from [the latest release](https://github.com/Zebradil/rustotpony/releases/latest) and put it
-in a place of your choice. If you're on the *nix system, don't forget to set proper permissions: `chmod +x totp`.
+in a place of your choice. If you're on the \*nix system, don't forget to set proper permissions: `chmod +x totp`.
 
 ### Build manually
 
@@ -63,71 +63,68 @@ Options:
 
 ### Choose your password wisely
 
-At the very first run, `totp` asks for a password for a new database.
-It's located at `$HOME/.rustotpony/db.json` (don't be confused by `json` extension it's a binary file in fact).
-If you forget the password or want to change it, you have to remove `$HOME/.rustotpony` directory.
-It's not convenient, but I'm going to improve usability and add a command for changing the password.
+On the first run, `totp` will prompt you to create a password for a new database, which is stored at `$HOME/.rustotpony/totp.safe`.
+This database is encrypted using the password you provide with age-encryption.
+
+If you forget the password or wish to change it, you will need to delete the database file.
+While this process is currently a bit inconvenient,
+I'm working on improving usability and will be adding a command to facilitate password changes in the future.
 
 ### Basic scenario
 
 1. Retrieve a secret key from your TOTP provider (it must be encoded with base32, for example, `GEZDGMZSGE2TKCQ=`)
 
-    ```shell
-    $ # Creating a fake secret key for demo purposes
-    $ echo 123321555 | base32
-    GEZDGMZSGE2TKNIK
-    ```
+   ```shell
+   $ # Creating a fake secret key for demo purposes
+   $ echo 123321555 | base32
+   GEZDGMZSGE2TKNIK
+   ```
 
 1. Add new generator with `totp add <NAME>` (you will be asked for a secret and a password)
 
-    ```shell
-    $ # Adding a new TOTP generator
-    $ totp add demo
-    Enter your secret code:
-    Enter your database pass:
-    New application created: demo
-    ```
-
-    If it's not the first run, you'll be asked for a password twice: for opening the database and for saving it.
+   ```shell
+   $ # Adding a new TOTP generator
+   $ totp add demo
+   Enter your secret code:
+   Enter your database pass:
+   New application created: demo
+   ```
 
 1. Use `totp list` to check your secrets
 
-    ```shell
-    $ # Listing all secrets in the database
-    $ totp list
-    Enter your database pass:
-    +------+------------------+----------+
-    | name | key              | username |
-    +------+------------------+----------+
-    | demo | GEZDGMZSGE2TKNIK |          |
-    +------+------------------+----------+
-    ```
+   ```shell
+   $ # Listing all secrets in the database
+   $ totp list
+   Enter your database pass:
+   +------+------------------+----------+
+   | name | key              | username |
+   +------+------------------+----------+
+   | demo | GEZDGMZSGE2TKNIK |          |
+   +------+------------------+----------+
+   ```
 
 1. Use `totp dash` or just `totp` for real-time dashboard
 
-    ```shell
-    $ # Display real-time dashboard with all generators
-    $ totp
-    Enter your database pass:
-    Welcome to RusTOTPony realtime dashboard! Press ^C to quit.
-    [=============================================               ]
-    009216 demo
-    ```
+   ```shell
+   $ # Display real-time dashboard with all generators
+   $ totp
+   Enter your database pass:
+   Welcome to RusTOTPony realtime dashboard! Press ^C to quit.
+   [=============================================               ]
+   009216 demo
+   ```
 
 1. After hitting ^C it'll clean up the dashboard
 
-    ```shell
-    $ totp
-    Enter your database pass:
-    I won't tell anyone about this 🤫
-    ```
+   ```shell
+   $ totp
+   Enter your database pass:
+   I won't tell anyone about this 🤫
+   ```
 
 ## TODO
 
-- command completion
-- database password caching
-- tests
-- refactor `show` and `show-all` commands
+[./TODO.md](./TODO.md)
 
 ## License
 

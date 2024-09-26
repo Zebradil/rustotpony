@@ -113,5 +113,6 @@ jobs:
           GIT_COMMITTER_EMAIL: german.lashevich+github-zebradil-bot@gmail.com
         with:
           extra_plugins: |
+            @semantic-release/exec
             @semantic-release/git
             @semantic-release-cargo/semantic-release-cargo

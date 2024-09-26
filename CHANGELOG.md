@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/Zebradil/rustotpony/compare/0.5.0...0.5.1) (2024-09-26)
+
+
+### Bug Fixes
+
+* **ci:** configure semantic-release/git to commit Cargo.toml ([5259603](https://github.com/Zebradil/rustotpony/commit/5259603bab690bdbd16c799cc4cabc374c1090d6))
+
 # [0.5.0](https://github.com/Zebradil/rustotpony/compare/0.4.5...0.5.0) (2024-09-26)
 
 

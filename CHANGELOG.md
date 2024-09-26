@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/Zebradil/rustotpony/compare/0.4.5...0.5.0) (2024-09-26)
+
+
+### Features
+
+* rewrite ([#65](https://github.com/Zebradil/rustotpony/issues/65)) ([b0a379a](https://github.com/Zebradil/rustotpony/commit/b0a379a566c9aca241f5cd88c3c1419fefa0bddb))
+
 ## [0.4.5](https://github.com/Zebradil/rustotpony/compare/0.4.4...0.4.5) (2024-02-26)
 
 

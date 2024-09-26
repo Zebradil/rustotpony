@@ -1,0 +1,69 @@
+---
+name: Push to master
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache cargo home
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: ${{ runner.OS }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.OS }}-cargo-
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.OS }}-target-${{ github.ref }}-
+            ${{ runner.OS }}-target-master-
+            ${{ runner.OS }}-target-
+      - name: Cargo test
+        run: cargo test --verbose
+  build:
+    needs:
+      - test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            bin_path: target\\release\\totp.exe
+          - os: macos-latest
+            bin_path: target/release/totp
+          - os: ubuntu-latest
+            bin_path: target/release/totp
+    steps:
+      - name: Install rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache cargo home
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: ${{ runner.OS }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.OS }}-cargo-
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.OS }}-target-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.OS }}-target-${{ github.ref }}-
+            ${{ runner.OS }}-target-master-
+            ${{ runner.OS }}-target-
+      - name: Cargo build release
+        run: cargo build --verbose --release

@@ -3,6 +3,7 @@ authors = ["German Lashevich <german.lashevich@gmail.com>"]
 categories = ["command-line-utilities"]
 description = "Manager of one-time password generators"
 documentation = "https://github.com/zebradil/rustotpony"
+edition = "2021"
 homepage = "https://github.com/zebradil/rustotpony"
 keywords = ["totp"]
 license = "MIT"

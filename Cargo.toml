@@ -10,7 +10,7 @@ license = "MIT"
 name = "rustotpony"
 readme = "README.md"
 repository = "https://github.com/zebradil/rustotpony"
-version = "0.5.2"                                           # SED-HERE <- this is a marker for the version
+version = "0.5.3"                                           # SED-HERE <- this is a marker for the version
 
 [dependencies]
 age = "0.10.0"

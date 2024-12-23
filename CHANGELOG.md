@@ -1,3 +1,10 @@
+## [0.5.5](https://github.com/Zebradil/rustotpony/compare/0.5.4...0.5.5) (2024-12-23)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate age to v0.10.1 [security] ([#70](https://github.com/Zebradil/rustotpony/issues/70)) ([be1985d](https://github.com/Zebradil/rustotpony/commit/be1985d592c1b6e4718ec9fdc232b4ad8788f24b))
+
 ## [0.5.4](https://github.com/Zebradil/rustotpony/compare/0.5.3...0.5.4) (2024-10-28)
 
 

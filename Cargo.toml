@@ -13,12 +13,12 @@ repository = "https://github.com/zebradil/rustotpony"
 version = "0.5.4"                                           # SED-HERE <- this is a marker for the version
 
 [dependencies]
-age = "0.10.0"
+age = "0.11.0"
 base32 = "0.5.1"
 clap = { version = "^4.5.16", features = ["derive"] }
 dirs = "^5.0.1"
 keyring = "^3.2.0"
-promkit = "0.5.0"
+promkit = "0.6.0"
 rand = "^0.8.5"
 rust-crypto = "0.2.36"
 serde = "1.0.209"

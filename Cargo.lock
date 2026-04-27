@@ -29,7 +29,7 @@ dependencies = [
  "lazy_static",
  "nom",
  "pin-project",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rust-embed",
  "scrypt",
  "sha2",
@@ -50,7 +50,7 @@ dependencies = [
  "hkdf",
  "io_tee",
  "nom",
- "rand 0.8.5",
+ "rand 0.8.6",
  "secrecy",
  "sha2",
 ]
@@ -1079,9 +1079,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
  "rand_chacha",
@@ -1243,7 +1243,7 @@ dependencies = [
 
 [[package]]
 name = "rustotpony"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "age",
  "base32",
@@ -1252,7 +1252,7 @@ dependencies = [
  "dirs",
  "keyring",
  "promkit",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rust-crypto",
  "serde",
  "serde_derive",

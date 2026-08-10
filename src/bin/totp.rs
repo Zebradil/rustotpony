@@ -4,6 +4,7 @@ extern crate dirs;
 extern crate promkit;
 extern crate rustotpony;
 
+use std::io::Read;
 use clap::{Parser, Subcommand};
 use promkit::preset::password::Password;
 use rustotpony::*;
@@ -135,34 +136,65 @@ fn get_secret() -> String {
 fn show_dashboard() {
     match app().get_applications() {
         Ok(apps) => {
-            let mut is_first_iteration = true;
+            let mut is_first = true;
             let lines_count = apps.len() + 1;
-            println!("Welcome to RusTOTPony realtime dashboard! Press ^C to quit.");
+            println!("Welcome to RusTOTPony realtime dashboard! Press ^C or 'q' to quit. Press a digit to copy code to clipboard.");
             ctrlc::set_handler(move || {
-                print!("\x1B[{}A\x1B[0G\x1B[0J", lines_count + 1);
+                print!("\x1B[{}A\x1B[0G\x1B[0J", lines_count);
                 println!("I won't tell anyone about this 🤫");
                 std::process::exit(0);
             })
             .expect("Error setting Ctrl-C handler");
-            // Prepare sorted keys for displaying apps in order
             let mut keys: Vec<String> = apps.keys().cloned().collect();
             keys.sort();
+            let apps_ref: Vec<&GenApp> = keys.iter().map(|k| apps.get(k).unwrap()).collect();
             loop {
-                if is_first_iteration {
-                    is_first_iteration = false;
+                if is_first {
+                    is_first = false;
                 } else {
                     print!("\x1B[{}A", lines_count);
                 }
                 print_progress_bar();
-                for key in keys.iter() {
-                    let app = &apps[key];
-                    println! {"{} {}", app.get_code(), app.get_name()};
+                for app in apps_ref.iter() {
+                    println!("{} {}", app.get_code(), app.get_name());
                 }
-                thread::sleep(Duration::from_millis(100));
+
+                let mut buf = [0u8; 1];
+                if std::io::stdin().read(&mut buf).is_ok() && buf[0] != 0 {
+                    if buf[0] == b'q' { break; }
+                    if buf[0].is_ascii_digit() && buf[0] != b'0' {
+                        let idx = (buf[0] - b'1') as usize;
+                        if idx < apps_ref.len() {
+                            copy_to_clipboard(apps_ref[idx].get_code().as_str());
+                            println!("  -> Copied '{}' to clipboard", apps_ref[idx].get_name());
+                        }
+                    }
+                }
             }
         }
         Err(err) => println!("{}", err),
     }
+}
+
+fn copy_to_clipboard(text: &str) {
+    let mut cmd = if cfg!(target_os = "windows") {
+        std::process::Command::new("clip")
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("pbcopy")
+    } else {
+        std::process::Command::new("xclip")
+    };
+
+    cmd.stdin(std::process::Stdio::piped())
+       .spawn()
+       .and_then(|mut child| {
+           let mut stdin = child.stdin.take().unwrap();
+           use std::io::Write;
+           stdin.write_all(text.as_bytes()).ok();
+           stdin.flush().ok();
+           child.wait()
+       })
+       .ok();
 }
 
 fn print_progress_bar() {
